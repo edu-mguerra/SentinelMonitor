@@ -6,6 +6,7 @@
 frontend/.env.local
 envs.zip
 INSTRUCOES.txt
+*.bat
 
 # Python
 __pycache__/
