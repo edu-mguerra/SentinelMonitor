@@ -1,0 +1,26 @@
+[Unit]
+Description=Sentinel Monitor Agent Daemon
+After=network.target
+Documentation=https://sentinelmonitor.io
+
+[Service]
+Type=simple
+User=sentinel-agent
+Group=sentinel-agent
+WorkingDirectory=/opt/sentinel-agent
+ExecStart=/opt/sentinel-agent/venv/bin/python3 /opt/sentinel-agent/agent.py
+Restart=always
+RestartSec=5s
+
+NoNewPrivileges=true
+ProtectSystem=full
+ProtectHome=true
+PrivateTmp=true
+ProtectKernelTunables=true
+ProtectControlGroups=true
+
+Environment=SENTINEL_CONFIG_PATH=/etc/sentinel-agent/agent.conf
+Environment=SENTINEL_BUFFER_PATH=/var/lib/sentinel-agent/buffer.json
+
+[Install]
+WantedBy=multi-user.target
