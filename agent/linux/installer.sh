@@ -53,10 +53,20 @@ if [ -z "$TEMP_TOKEN" ]; then
     exit 1
 fi
 
-echo -e "${GREEN}[1/6] Validando ambiente e dependências do sistema...${NC}"
+systemctl stop sentinel-agent 2>/dev/null || true
+rm -f /var/lib/sentinel-agent/buffer.json 2>/dev/null || true
 
+echo -e "${GREEN}[1/5] Validando ambiente e dependências do sistema...${NC}"
+
+NEED_DEPS=0
 if ! command -v python3 &> /dev/null || ! command -v curl &> /dev/null; then
-    echo "Instalando dependências essenciais (python3, curl)..."
+    NEED_DEPS=1
+elif ! python3 -c "import ensurepip" &> /dev/null || ! python3 -m venv -h &> /dev/null; then
+    NEED_DEPS=1
+fi
+
+if [ "$NEED_DEPS" -eq 1 ]; then
+    echo "Instalando dependências essenciais (python3, python3-venv, python3-pip, curl)..."
     if command -v apt-get &> /dev/null; then
         apt-get update -y && apt-get install -y python3 python3-pip python3-venv curl
     elif command -v dnf &> /dev/null; then
@@ -66,22 +76,25 @@ if ! command -v python3 &> /dev/null || ! command -v curl &> /dev/null; then
     fi
 fi
 
-echo -e "${GREEN}[2/6] Configurando usuário restrito 'sentinel-agent'...${NC}"
-if ! id -u sentinel-agent &> /dev/null; then
-    useradd -r -s /usr/sbin/nologin -d /opt/sentinel-agent -c "Sentinel Monitor Agent" sentinel-agent
-fi
-
-echo -e "${GREEN}[3/6] Criando diretórios do agente...${NC}"
+echo -e "${GREEN}[2/5] Configurando diretórios do agente...${NC}"
 mkdir -p /opt/sentinel-agent
 mkdir -p /etc/sentinel-agent
 mkdir -p /var/lib/sentinel-agent
 
-echo -e "${GREEN}[4/6] Configurando ambiente Python isolado...${NC}"
-python3 -m venv /opt/sentinel-agent/venv
+echo -e "${GREEN}[3/5] Configurando ambiente Python isolado...${NC}"
+rm -rf /opt/sentinel-agent/venv
+if ! python3 -m venv /opt/sentinel-agent/venv; then
+    echo "Falha ao criar venv. Instalando python3-venv e recriando..."
+    if command -v apt-get &> /dev/null; then
+        apt-get update -y && apt-get install -y python3-venv python3-pip
+    fi
+    rm -rf /opt/sentinel-agent/venv
+    python3 -m venv /opt/sentinel-agent/venv
+fi
 /opt/sentinel-agent/venv/bin/pip install --upgrade pip --quiet
 /opt/sentinel-agent/venv/bin/pip install "psutil>=5.9.0" --quiet
 
-echo -e "${GREEN}[5/6] Baixando módulos do agente...${NC}"
+echo -e "${GREEN}[4/5] Baixando módulos do agente...${NC}"
 for FILE in collector.py buffer.py agent.py; do
     if ! curl -fsSL "${API_URL}/agent-files/${FILE}" -o "/opt/sentinel-agent/${FILE}"; then
         echo -e "${RED}[FALHA] Não foi possível baixar ${FILE} de ${API_URL}/agent-files/${FILE}${NC}"
@@ -100,7 +113,7 @@ fi
 KERNEL=$(uname -r)
 ARCH=$(uname -m)
 
-echo -e "${GREEN}[6/6] Realizando handshake com o Sentinel Monitor...${NC}"
+echo -e "${GREEN}[5/5] Realizando handshake com o Sentinel Monitor...${NC}"
 HANDSHAKE_PAYLOAD=$(cat <<EOF
 {
   "temp_token": "$TEMP_TOKEN",
@@ -143,10 +156,8 @@ SERVICES="nginx,docker,postgres,mysqld,apache2"
 EOF
 
 chmod 600 /etc/sentinel-agent/agent.conf
-chown sentinel-agent:sentinel-agent /etc/sentinel-agent/agent.conf
-
-chown -R sentinel-agent:sentinel-agent /opt/sentinel-agent
-chown -R sentinel-agent:sentinel-agent /var/lib/sentinel-agent
+chmod 755 /opt/sentinel-agent
+chmod 755 /var/lib/sentinel-agent
 
 cat <<EOF > /etc/systemd/system/sentinel-agent.service
 [Unit]
@@ -155,17 +166,11 @@ After=network.target
 
 [Service]
 Type=simple
-User=sentinel-agent
-Group=sentinel-agent
+User=root
 WorkingDirectory=/opt/sentinel-agent
 ExecStart=/opt/sentinel-agent/venv/bin/python3 /opt/sentinel-agent/agent.py
 Restart=always
 RestartSec=5s
-
-NoNewPrivileges=true
-ProtectSystem=full
-ProtectHome=true
-PrivateTmp=true
 
 Environment=SENTINEL_CONFIG_PATH=/etc/sentinel-agent/agent.conf
 Environment=SENTINEL_BUFFER_PATH=/var/lib/sentinel-agent/buffer.json
@@ -175,7 +180,8 @@ WantedBy=multi-user.target
 EOF
 
 systemctl daemon-reload
-systemctl enable --now sentinel-agent || true
+systemctl enable sentinel-agent || true
+systemctl restart sentinel-agent || true
 
 echo -e "${GREEN}======================================================${NC}"
 echo -e "${GREEN}  SENTINEL AGENT INSTALADO E ATIVADO COM SUCESSO!   ${NC}"

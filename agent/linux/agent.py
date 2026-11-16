@@ -167,6 +167,11 @@ def main():
             for idx, item in enumerate(pending_items):
                 success, resp_data = send_metric(config["api_url"], config["agent_token"], item)
                 if not success:
+                    fresh = load_config()
+                    if fresh.get("agent_token") and fresh["agent_token"] != config["agent_token"]:
+                        config["agent_token"] = fresh["agent_token"]
+                        config["api_url"] = fresh["api_url"]
+                        logger.info("Novo token detectado em agent.conf! Atualizado em memória.")
                     failed_items = pending_items[idx:]
                     break
                 if resp_data:

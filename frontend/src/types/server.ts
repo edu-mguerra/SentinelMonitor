@@ -45,17 +45,22 @@ export interface ExtraTelemetry {
     listening_ports: { port: number; process: string }[];
   };
   pm2_apps?: {
+    pm_id?: number;
     name: string;
     status: string;
     cpu_percent: number;
     memory_mb: number;
     restarts: number;
+    uptime?: number;
   }[];
   docker_containers?: {
+    id?: string;
     name: string;
     image: string;
     state: string;
     status: string;
+    ports?: string;
+    created?: string;
   }[];
   hardware?: {
     cpu_freq_mhz?: number | null;

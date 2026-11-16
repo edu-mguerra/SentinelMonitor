@@ -261,27 +261,65 @@ def get_network_connections() -> Dict[str, Any]:
         return {**counts, "listening_ports": []}
 
 def get_pm2_apps() -> List[Dict[str, Any]]:
-    """Lista aplicações gerenciadas pelo PM2 (caso instalado)."""
+    """Lista aplicações gerenciadas pelo PM2 para root e outros usuários."""
+    import glob
+
     pm2_bin = shutil.which("pm2")
     if not pm2_bin:
+        for candidate in ["/usr/local/bin/pm2", "/usr/bin/pm2", "/bin/pm2"]:
+            if os.path.exists(candidate):
+                pm2_bin = candidate
+                break
+        if not pm2_bin:
+            nvm_candidates = glob.glob("/root/.nvm/versions/node/*/bin/pm2") + glob.glob("/home/*/.nvm/versions/node/*/bin/pm2")
+            if nvm_candidates:
+                pm2_bin = nvm_candidates[0]
+
+    if not pm2_bin:
         return []
-    try:
-        out = subprocess.check_output([pm2_bin, "jlist"], stderr=subprocess.DEVNULL, timeout=3, text=True)
-        raw_list = json.loads(out)
-        apps = []
-        for item in raw_list:
-            env = item.get("pm2_env") or {}
-            monit = item.get("monit") or {}
-            apps.append({
-                "name": item.get("name", "unknown"),
-                "status": env.get("status", "unknown"),
-                "cpu_percent": monit.get("cpu", 0),
-                "memory_mb": round((monit.get("memory", 0) or 0) / (1024 * 1024), 1),
-                "restarts": env.get("restart_time", 0),
-            })
-        return apps[:30]
-    except Exception:
-        return []
+
+    pm2_homes = ["/root/.pm2"]
+    pm2_homes.extend(glob.glob("/home/*/.pm2"))
+    pm2_homes = list(dict.fromkeys([h for h in pm2_homes if os.path.exists(h)]))
+    if not pm2_homes:
+        pm2_homes = [None]
+
+    all_apps = []
+    seen_names = set()
+
+    for home in pm2_homes:
+        try:
+            env_vars = os.environ.copy()
+            if home:
+                env_vars["PM2_HOME"] = home
+            out = subprocess.check_output(
+                [pm2_bin, "jlist"],
+                env=env_vars,
+                stderr=subprocess.DEVNULL,
+                timeout=5,
+                text=True
+            )
+            raw_list = json.loads(out)
+            for item in raw_list:
+                name = item.get("name", "unknown")
+                if name in seen_names:
+                    continue
+                seen_names.add(name)
+                env = item.get("pm2_env") or {}
+                monit = item.get("monit") or {}
+                all_apps.append({
+                    "pm_id": item.get("pm_id"),
+                    "name": name,
+                    "status": env.get("status", "unknown"),
+                    "cpu_percent": monit.get("cpu", 0),
+                    "memory_mb": round((monit.get("memory", 0) or 0) / (1024 * 1024), 1),
+                    "restarts": env.get("restart_time", 0),
+                    "uptime": env.get("pm_uptime"),
+                })
+        except Exception:
+            continue
+
+    return all_apps[:100]
 
 def get_docker_containers() -> List[Dict[str, Any]]:
     """Lista containers Docker (caso Docker CLI esteja disponível)."""
@@ -301,12 +339,15 @@ def get_docker_containers() -> List[Dict[str, Any]]:
                 continue
             item = json.loads(line)
             containers.append({
-                "name": item.get("Names", ""),
+                "id": (item.get("ID") or "")[:12],
+                "name": (item.get("Names") or "").lstrip("/"),
                 "image": item.get("Image", ""),
-                "state": item.get("State", ""),
+                "state": (item.get("State") or "").lower(),
                 "status": item.get("Status", ""),
+                "ports": item.get("Ports", ""),
+                "created": item.get("CreatedAt", ""),
             })
-        return containers[:30]
+        return containers[:50]
     except Exception:
         return []
 

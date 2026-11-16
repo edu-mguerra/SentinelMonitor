@@ -29,6 +29,7 @@ class Settings(BaseSettings):
     EMAILS_FROM_NAME: str = "Sentinel Monitor"
 
     GOOGLE_CLIENT_ID: Optional[str] = None
+    PUBLIC_API_URL: Optional[str] = None
 
     @field_validator("BACKEND_CORS_ORIGINS", mode="before")
     @classmethod

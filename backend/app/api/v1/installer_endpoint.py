@@ -6,6 +6,7 @@ from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 from app.api.deps import get_db
 from app.models.agent_release import AgentRelease
+from app.core.config import settings
 
 router = APIRouter(tags=["Instalador"])
 
@@ -106,7 +107,12 @@ async def get_agent_release(request: Request, db: AsyncSession = Depends(get_db)
     Retorna a versão mais recente publicada do agente, histórico de releases e comandos de atualização.
     Se o Master Admin ainda não publicou nenhuma versão nova, nenhuma atualização é sinalizada.
     """
-    api_url = str(request.base_url).rstrip("/") + "/api/v1"
+    if settings.PUBLIC_API_URL:
+        api_url = settings.PUBLIC_API_URL.rstrip("/")
+        if not api_url.endswith("/api/v1"):
+            api_url = f"{api_url}/api/v1"
+    else:
+        api_url = str(request.base_url).rstrip("/") + "/api/v1"
 
     query = (
         select(AgentRelease)
@@ -164,10 +170,12 @@ async def get_agent_release(request: Request, db: AsyncSession = Depends(get_db)
                 'Start-ScheduledTask -TaskName "SentinelMonitorAgent"'
             ),
             "linux": (
-                f"sudo systemctl stop sentinel-agent && "
+                f"sudo sed -i 's/User=sentinel-agent/User=root/g' /etc/systemd/system/sentinel-agent.service 2>/dev/null || true; "
+                f"sudo sed -i 's/ProtectHome=true/ProtectHome=false/g' /etc/systemd/system/sentinel-agent.service 2>/dev/null || true; "
+                f"sudo systemctl daemon-reload && "
                 f"sudo curl -fsSL {api_url}/agent-files/collector.py -o /opt/sentinel-agent/collector.py && "
                 f"sudo curl -fsSL {api_url}/agent-files/agent.py -o /opt/sentinel-agent/agent.py && "
-                f"sudo systemctl start sentinel-agent"
+                f"sudo systemctl restart sentinel-agent"
             ),
             "macos": (
                 f'sudo curl -fsSL {api_url}/agent-files/collector.py -o "/Library/Application Support/SentinelAgent/collector.py" && '

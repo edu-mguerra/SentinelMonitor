@@ -4,6 +4,8 @@
 !.env.example
 !.env.local.example
 frontend/.env.local
+envs.zip
+INSTRUCOES.txt
 
 # Python
 __pycache__/

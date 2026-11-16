@@ -17,6 +17,7 @@ from app.schemas.server import (
     ServerMetricResponse,
 )
 from app.core.security import generate_temp_install_token
+from app.core.config import settings
 
 router = APIRouter(
     prefix="/organizations/{organization_id}/servers",
@@ -25,10 +26,22 @@ router = APIRouter(
 
 def build_install_commands(request: Request, token: str) -> dict[str, str]:
     """Gera os comandos de instalação frictionless one-liner para Linux, macOS e Windows."""
-    base_url = str(request.base_url).rstrip("/")
-    api_url = f"{base_url}/api/v1"
+    if settings.PUBLIC_API_URL:
+        api_url = settings.PUBLIC_API_URL.rstrip("/")
+        if not api_url.endswith("/api/v1"):
+            api_url = f"{api_url}/api/v1"
+    else:
+        base_url = str(request.base_url).rstrip("/")
+        api_url = f"{base_url}/api/v1"
+
+    linux_cmd = (
+        f'which curl >/dev/null 2>&1 && python3 -c "import ensurepip" >/dev/null 2>&1 || '
+        f'(command -v apt-get >/dev/null 2>&1 && apt-get update -qq && apt-get install -y -qq curl python3-venv python3-pip) || '
+        f'(command -v yum >/dev/null 2>&1 && yum install -y -q curl python3-pip); '
+        f'curl -sL {api_url}/install.sh | sudo bash -s -- --token={token} --api-url={api_url}'
+    )
     return {
-        "linux": f"curl -sL {api_url}/install.sh | sudo bash -s -- --token={token} --api-url={api_url}",
+        "linux": linux_cmd,
         "macos": f"curl -sL {api_url}/install-mac.sh | sudo bash -s -- --token={token} --api-url={api_url}",
         "windows": f'irm "{api_url}/install.ps1?token={token}&api_url={api_url}" | iex',
     }
