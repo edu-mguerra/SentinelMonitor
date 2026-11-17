@@ -74,8 +74,18 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     setIsLoading(true);
     try {
       await authService.register(credentials);
-
-      await login({ email: credentials.email, password: credentials.password });
+      try {
+        await login({ email: credentials.email, password: credentials.password });
+      } catch (loginErr: any) {
+        if (
+          loginErr.message?.toLowerCase().includes('aprova') ||
+          loginErr.message?.toLowerCase().includes('inativ')
+        ) {
+          router.push('/login?pending_approval=1');
+          return;
+        }
+        throw loginErr;
+      }
     } finally {
       setIsLoading(false);
     }

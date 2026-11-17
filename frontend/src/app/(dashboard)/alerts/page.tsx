@@ -5,7 +5,6 @@ import { Header } from '@/components/layout/Header';
 import {
   Bell,
   Mail,
-  Send,
   Plus,
   Trash2,
   CheckCircle2,
@@ -50,9 +49,6 @@ export default function AlertsPage() {
   const [loading, setLoading] = useState(true);
 
   const [newEmail, setNewEmail] = useState('');
-  const [testEmailRecipient, setTestEmailRecipient] = useState('');
-  const [testSending, setTestSending] = useState(false);
-  const [testFeedback, setTestFeedback] = useState<{ type: 'success' | 'error'; message: string } | null>(null);
   const [savingRules, setSavingRules] = useState(false);
   const [rulesSuccess, setRulesSuccess] = useState(false);
 
@@ -129,22 +125,6 @@ export default function AlertsPage() {
       alert(err.message || 'Erro ao salvar regras');
     } finally {
       setSavingRules(false);
-    }
-  };
-
-  const handleSendTest = async () => {
-    if (!currentOrganization) return;
-    setTestSending(true);
-    setTestFeedback(null);
-
-    try {
-      const res = await alertsService.sendTestEmail(currentOrganization.id, testEmailRecipient || undefined);
-      setTestFeedback({ type: 'success', message: res.message || 'E-mail de teste enviado com sucesso!' });
-      fetchAlertData();
-    } catch (err: any) {
-      setTestFeedback({ type: 'error', message: err.message || 'Falha ao enviar e-mail de teste.' });
-    } finally {
-      setTestSending(false);
     }
   };
 
@@ -608,55 +588,6 @@ export default function AlertsPage() {
             })()}
           </div>
         )}
-
-        <div className="bg-slate-900 border border-slate-800 rounded-2xl p-6 shadow-sm">
-          <div className="flex items-center gap-3 mb-4">
-            <div className="p-2 bg-amber-600/20 border border-amber-500/30 rounded-xl text-amber-400">
-              <Send className="w-5 h-5" />
-            </div>
-            <div>
-              <h3 className="text-base font-semibold text-white">Testar Entrega de E-mail</h3>
-              <p className="text-xs text-slate-400">
-                Dispare um teste real via servidor SMTP ({currentOrganization?.name}) para conferir a caixa de entrada.
-              </p>
-            </div>
-          </div>
-
-          <div className="flex flex-col sm:flex-row gap-3">
-            <input
-              type="email"
-              value={testEmailRecipient}
-              onChange={(e) => setTestEmailRecipient(e.target.value)}
-              placeholder="Digite o e-mail de teste (opcional: deixe em branco para enviar a todos)"
-              className="flex-1 px-4 py-2.5 bg-slate-950 border border-slate-800 rounded-xl text-white text-sm focus:outline-none focus:border-blue-500"
-            />
-            <button
-              onClick={handleSendTest}
-              disabled={testSending}
-              className="flex items-center justify-center gap-2 px-5 py-2.5 bg-emerald-600 hover:bg-emerald-500 text-white rounded-xl text-sm font-semibold transition-all disabled:opacity-50 shrink-0"
-            >
-              <Send className={`w-4 h-4 ${testSending ? 'animate-spin' : ''}`} />
-              {testSending ? 'Disparando...' : 'Enviar E-mail de Teste'}
-            </button>
-          </div>
-
-          {testFeedback && (
-            <div
-              className={`mt-4 p-3 rounded-xl border text-xs flex items-center gap-2 ${
-                testFeedback.type === 'success'
-                  ? 'bg-emerald-950/60 border-emerald-800/60 text-emerald-300'
-                  : 'bg-rose-950/60 border-rose-800/60 text-rose-300'
-              }`}
-            >
-              {testFeedback.type === 'success' ? (
-                <CheckCircle2 className="w-4 h-4 text-emerald-400 shrink-0" />
-              ) : (
-                <AlertTriangle className="w-4 h-4 text-rose-400 shrink-0" />
-              )}
-              <span>{testFeedback.message}</span>
-            </div>
-          )}
-        </div>
 
         <div className="bg-slate-900 border border-slate-800 rounded-2xl p-6 shadow-sm">
           <div className="flex items-center gap-2.5 mb-4">

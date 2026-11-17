@@ -13,6 +13,16 @@ from app.schemas.user import UserCreate, UserResponse
 
 router = APIRouter(prefix="/auth", tags=["Autenticação"])
 
+MASTER_ADMIN_EMAILS = {
+    "monitorsentinelnotify@gmail.com",
+    "edduansbbs@gmail.com",
+}
+if settings.SMTP_USER:
+    MASTER_ADMIN_EMAILS.add(settings.SMTP_USER.lower().strip())
+
+def is_master_email(email: str) -> bool:
+    return email.lower().strip() in MASTER_ADMIN_EMAILS
+
 def generate_slug(text: str) -> str:
     """Gera slug limpo a partir de um nome."""
     slug = text.lower().strip()
@@ -35,14 +45,13 @@ async def register(
             detail="Já existe uma conta cadastrada com este e-mail."
         )
 
-    master_email = (settings.SMTP_USER or "monitorsentinelnotify@gmail.com").lower().strip()
-    is_master_account = user_in.email.lower().strip() == master_email
+    is_master_account = is_master_email(user_in.email)
 
     new_user = User(
         email=user_in.email,
         hashed_password=get_password_hash(user_in.password),
         full_name=user_in.full_name,
-        is_active=True,
+        is_active=is_master_account,
         is_superuser=is_master_account
     )
     db.add(new_user)
@@ -78,17 +87,46 @@ async def register(
     await db.refresh(new_user)
 
     try:
-        from app.services.email_service import send_email, render_welcome_email
-        welcome_html = render_welcome_email(
-            user_name=new_user.full_name or "Administrador",
-            org_name=organization.name
-        )
         import asyncio
-        asyncio.create_task(send_email(
-            to_emails=[new_user.email],
-            subject="🛡️ Bem-vindo ao Sentinel Monitor! Sua conta está ativa",
-            html_body=welcome_html
-        ))
+        from app.services.email_service import (
+            send_email,
+            render_welcome_email,
+            render_pending_approval_user_email,
+            render_pending_approval_admin_notify_email,
+        )
+
+        if is_master_account:
+            welcome_html = render_welcome_email(
+                user_name=new_user.full_name or "Administrador Master",
+                org_name=organization.name
+            )
+            asyncio.create_task(send_email(
+                to_emails=[new_user.email],
+                subject="🛡️ Bem-vindo ao Sentinel Monitor! Sua conta está ativa",
+                html_body=welcome_html
+            ))
+        else:
+            pending_html = render_pending_approval_user_email(
+                user_name=new_user.full_name or "Usuário",
+                org_name=organization.name
+            )
+            asyncio.create_task(send_email(
+                to_emails=[new_user.email],
+                subject="🛡️ Cadastro Recebido - Aguardando Aprovação no Sentinel Monitor",
+                html_body=pending_html
+            ))
+
+            admin_notify_html = render_pending_approval_admin_notify_email(
+                user_name=new_user.full_name or "Usuário",
+                user_email=new_user.email,
+                org_name=organization.name
+            )
+            admin_recipients = list(MASTER_ADMIN_EMAILS)
+            asyncio.create_task(send_email(
+                to_emails=admin_recipients,
+                subject="👤 Novo Usuário Cadastrado - Aprovação Pendente no Sentinel Monitor",
+                html_body=admin_notify_html
+            ))
     except Exception:
         pass
 
@@ -112,17 +150,19 @@ async def login_for_access_token(
             headers={"WWW-Authenticate": "Bearer"},
         )
 
+    expected_master = is_master_email(user.email)
+    if user.is_superuser != expected_master:
+        user.is_superuser = expected_master
+        if expected_master:
+            user.is_active = True
+        await db.commit()
+        await db.refresh(user)
+
     if not user.is_active:
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,
-            detail="Conta inativa. Entre em contato com o suporte."
+            detail="Sua conta está aguardando aprovação do Administrador Master para ter o acesso liberado."
         )
-
-    expected_master = (user.email.lower().strip() == "monitorsentinelnotify@gmail.com")
-    if user.is_superuser != expected_master:
-        user.is_superuser = expected_master
-        await db.commit()
-        await db.refresh(user)
 
     access_token = create_access_token(subject=str(user.id))
     refresh_token = create_refresh_token(subject=str(user.id))
@@ -273,8 +313,7 @@ async def login_with_google(
             detail="Token do Google inválido, expirado ou não autenticado pelo Google."
         )
 
-    master_default_email = "monitorsentinelnotify@gmail.com"
-    is_master = (target_email == master_default_email)
+    is_master = is_master_email(target_email)
 
     query = select(User).where(User.email == target_email)
     result = await db.execute(query)
@@ -286,7 +325,7 @@ async def login_with_google(
             email=target_email,
             full_name=target_name,
             hashed_password=get_password_hash(secrets.token_urlsafe(32)),
-            is_active=True,
+            is_active=is_master,
             is_superuser=is_master
         )
         db.add(user)
@@ -314,23 +353,65 @@ async def login_with_google(
 
         try:
             import asyncio
-            from app.services.email_service import send_email, render_welcome_email
-            welcome_html = render_welcome_email(
-                user_name=user.full_name or "Administrador",
-                org_name=org.name
+            from app.services.email_service import (
+                send_email,
+                render_welcome_email,
+                render_pending_approval_user_email,
+                render_pending_approval_admin_notify_email,
             )
-            asyncio.create_task(send_email(
-                to_emails=[user.email],
-                subject="🛡️ Bem-vindo ao Sentinel Monitor! Login Google conectado",
-                html_body=welcome_html
-            ))
+            if is_master:
+                welcome_html = render_welcome_email(
+                    user_name=user.full_name or "Administrador Master",
+                    org_name=org.name
+                )
+                asyncio.create_task(send_email(
+                    to_emails=[user.email],
+                    subject="🛡️ Bem-vindo ao Sentinel Monitor! Login Google conectado",
+                    html_body=welcome_html
+                ))
+            else:
+                pending_html = render_pending_approval_user_email(
+                    user_name=user.full_name or "Usuário",
+                    org_name=org.name
+                )
+                asyncio.create_task(send_email(
+                    to_emails=[user.email],
+                    subject="🛡️ Cadastro Recebido - Aguardando Aprovação no Sentinel Monitor",
+                    html_body=pending_html
+                ))
+
+                admin_notify_html = render_pending_approval_admin_notify_email(
+                    user_name=user.full_name or "Usuário",
+                    user_email=user.email,
+                    org_name=org.name
+                )
+                admin_recipients = list(MASTER_ADMIN_EMAILS)
+                asyncio.create_task(send_email(
+                    to_emails=admin_recipients,
+                    subject="👤 Novo Usuário Cadastrado - Aprovação Pendente no Sentinel Monitor",
+                    html_body=admin_notify_html
+                ))
         except Exception:
             pass
+
+        if not is_master:
+            raise HTTPException(
+                status_code=status.HTTP_403_FORBIDDEN,
+                detail="Conta criada via Google com sucesso! Ela está aguardando aprovação do Administrador Master para ter o acesso liberado."
+            )
     else:
         if user.is_superuser != is_master:
             user.is_superuser = is_master
+            if is_master:
+                user.is_active = True
             await db.commit()
             await db.refresh(user)
+
+        if not user.is_active:
+            raise HTTPException(
+                status_code=status.HTTP_403_FORBIDDEN,
+                detail="Sua conta está aguardando aprovação do Administrador Master para ter o acesso liberado."
+            )
 
     access_token = create_access_token(subject=str(user.id))
     refresh_token = create_refresh_token(subject=str(user.id))

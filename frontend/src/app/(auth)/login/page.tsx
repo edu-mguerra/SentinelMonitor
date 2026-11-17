@@ -17,7 +17,14 @@ export default function LoginPage() {
   const [password, setPassword] = useState('');
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
+  const [pendingApprovalMsg, setPendingApprovalMsg] = useState(false);
   const { login, loginWithGoogle } = useAuth();
+
+  useEffect(() => {
+    if (typeof window !== 'undefined' && window.location.search.includes('pending_approval=1')) {
+      setPendingApprovalMsg(true);
+    }
+  }, []);
 
   const handleCredentialResponse = async (response: any) => {
     if (response?.credential) {
@@ -97,9 +104,29 @@ export default function LoginPage() {
           <p className="text-sm text-slate-400 mt-1">Acesse sua plataforma de infraestrutura</p>
         </div>
 
+        {pendingApprovalMsg && (
+          <div className="mb-6 flex items-start gap-3 p-3.5 bg-amber-950/60 border border-amber-800/60 rounded-xl text-amber-300 text-xs leading-relaxed animate-in fade-in">
+            <AlertCircle className="w-5 h-5 shrink-0 mt-0.5 text-amber-400" />
+            <div>
+              <strong className="block text-amber-200 font-semibold mb-0.5">Cadastro realizado com sucesso!</strong>
+              Sua conta foi criada e está aguardando a aprovação do Administrador Master para ter o acesso liberado.
+            </div>
+          </div>
+        )}
+
         {error && (
-          <div className="mb-6 flex items-start gap-3 p-3.5 bg-rose-950/60 border border-rose-800/60 rounded-xl text-rose-300 text-xs leading-relaxed">
-            <AlertCircle className="w-5 h-5 shrink-0 mt-0.5 text-rose-400" />
+          <div
+            className={`mb-6 flex items-start gap-3 p-3.5 rounded-xl text-xs leading-relaxed ${
+              error.toLowerCase().includes('aprova')
+                ? 'bg-amber-950/60 border border-amber-800/60 text-amber-300'
+                : 'bg-rose-950/60 border border-rose-800/60 text-rose-300'
+            }`}
+          >
+            <AlertCircle
+              className={`w-5 h-5 shrink-0 mt-0.5 ${
+                error.toLowerCase().includes('aprova') ? 'text-amber-400' : 'text-rose-400'
+              }`}
+            />
             <span>{error}</span>
           </div>
         )}

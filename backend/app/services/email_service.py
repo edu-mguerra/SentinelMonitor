@@ -3,11 +3,21 @@ import logging
 import smtplib
 from email.mime.multipart import MIMEMultipart
 from email.mime.text import MIMEText
-from datetime import datetime
+from datetime import datetime, timezone, timedelta
 from typing import List, Tuple, Optional
 from app.core.config import settings
 
 logger = logging.getLogger("sentinel.email")
+
+BR_TIMEZONE = timezone(timedelta(hours=-3))
+
+def format_datetime_br(dt: Optional[datetime] = None) -> str:
+    if dt is None:
+        dt = datetime.now(timezone.utc)
+    elif dt.tzinfo is None:
+        dt = dt.replace(tzinfo=timezone.utc)
+    br_dt = dt.astimezone(BR_TIMEZONE)
+    return br_dt.strftime("%d/%m/%Y às %H:%M:%S")
 
 def _send_smtp_sync(to_emails: List[str], subject: str, html_body: str, text_body: str) -> Tuple[bool, Optional[str]]:
     """Função síncrona que realiza a conexão SMTP e envio via socket TLS."""
@@ -124,7 +134,7 @@ def render_org_created_email(org_name: str, org_slug: str, user_name: str) -> st
     """
 
 def render_vps_offline_email(server_name: str, hostname: str, timeout_seconds: int, detected_at: datetime) -> str:
-    detected_str = detected_at.strftime("%d/%m/%Y às %H:%M:%S UTC")
+    detected_str = format_datetime_br(detected_at)
     return f"""
     <!DOCTYPE html>
     <html>
@@ -164,7 +174,7 @@ def render_vps_offline_email(server_name: str, hostname: str, timeout_seconds: i
     """
 
 def render_hardware_alert_email(server_name: str, metric_name: str, current_val: float, threshold_val: float) -> str:
-    now_str = datetime.now().strftime("%d/%m/%Y às %H:%M:%S UTC")
+    now_str = format_datetime_br()
     return f"""
     <!DOCTYPE html>
     <html>
@@ -201,7 +211,7 @@ def render_hardware_alert_email(server_name: str, metric_name: str, current_val:
     """
 
 def render_incident_alert_email(incident_title: str, resource_name: str, resource_type: str, details: str, started_at: datetime) -> str:
-    started_str = started_at.strftime("%d/%m/%Y às %H:%M:%S UTC")
+    started_str = format_datetime_br(started_at)
     return f"""
     <!DOCTYPE html>
     <html>
@@ -234,7 +244,7 @@ def render_incident_alert_email(incident_title: str, resource_name: str, resourc
     """
 
 def render_recovery_alert_email(incident_title: str, resource_name: str, duration_str: str, resolved_at: datetime) -> str:
-    resolved_str = resolved_at.strftime("%d/%m/%Y às %H:%M:%S UTC")
+    resolved_str = format_datetime_br(resolved_at)
     return f"""
     <!DOCTYPE html>
     <html>
@@ -264,6 +274,115 @@ def render_recovery_alert_email(incident_title: str, resource_name: str, duratio
           {SPAM_NOTICE_HTML}
         </div>
         <div class="footer">Sentinel Monitor • Monitoramento em Tempo Real</div>
+      </div>
+    </body>
+    </html>
+    """
+
+def render_pending_approval_user_email(user_name: str, org_name: str) -> str:
+    now_str = format_datetime_br()
+    return f"""
+    <!DOCTYPE html>
+    <html>
+    <head><meta charset="utf-8"><style>{BASE_CSS}</style></head>
+    <body>
+      <div class="card" style="border: 1px solid #eab308;">
+        <div style="background: linear-gradient(135deg, #713f12, #a16207); padding: 28px 30px;">
+          <span style="background-color: #fde047; color: #713f12; padding: 4px 10px; border-radius: 6px; font-size: 11px; font-weight: bold; text-transform: uppercase;">Aprovação Pendente</span>
+          <div style="font-size: 22px; font-weight: bold; color: #ffffff; margin-top: 10px;">Cadastro Recebido - Sentinel Monitor 🛡️</div>
+        </div>
+        <div class="content">
+          <p>Olá, <strong>{user_name}</strong>!</p>
+          <p>Seu cadastro para a organização <strong>{org_name}</strong> foi realizado com sucesso e está aguardando a aprovação de um <strong>Administrador Master</strong>.</p>
+          <div class="field">
+            <div class="label">Status da Conta</div>
+            <div class="value" style="color: #facc15;">⏳ Em análise pelo Administrador Master</div>
+          </div>
+          <div class="field">
+            <div class="label">Data da Solicitação</div>
+            <div class="value">{now_str}</div>
+          </div>
+          <p style="font-size: 13px; color: #94a3b8; margin-top: 16px;">
+            Assim que seu acesso for liberado, você receberá um e-mail de confirmação e poderá acessar normalmente a plataforma.
+          </p>
+          {SPAM_NOTICE_HTML}
+        </div>
+        <div class="footer">Sentinel Monitor • Plataforma de Monitoramento</div>
+      </div>
+    </body>
+    </html>
+    """
+
+def render_pending_approval_admin_notify_email(user_name: str, user_email: str, org_name: str) -> str:
+    now_str = format_datetime_br()
+    return f"""
+    <!DOCTYPE html>
+    <html>
+    <head><meta charset="utf-8"><style>{BASE_CSS}</style></head>
+    <body>
+      <div class="card" style="border: 1px solid #3b82f6;">
+        <div style="background: linear-gradient(135deg, #1e3a8a, #2563eb); padding: 28px 30px;">
+          <span style="background-color: #60a5fa; color: #0f172a; padding: 4px 10px; border-radius: 6px; font-size: 11px; font-weight: bold; text-transform: uppercase;">Painel Master</span>
+          <div style="font-size: 22px; font-weight: bold; color: #ffffff; margin-top: 10px;">👤 Novo Usuário Aguardando Aprovação</div>
+        </div>
+        <div class="content">
+          <p>Um novo usuário completou o cadastro na plataforma e aguarda sua autorização:</p>
+          <div class="field">
+            <div class="label">Nome Completo</div>
+            <div class="value">{user_name}</div>
+          </div>
+          <div class="field">
+            <div class="label">E-mail</div>
+            <div class="value">{user_email}</div>
+          </div>
+          <div class="field">
+            <div class="label">Empresa / Organização</div>
+            <div class="value">{org_name}</div>
+          </div>
+          <div class="field">
+            <div class="label">Data de Registro</div>
+            <div class="value">{now_str}</div>
+          </div>
+          <p style="margin-top: 18px;">
+            Para aprovar ou rejeitar este acesso, entre na aba <strong>Gestão de Usuários</strong> no painel de administração.
+          </p>
+          {SPAM_NOTICE_HTML}
+        </div>
+        <div class="footer">Sentinel Monitor • Painel de Controle Master</div>
+      </div>
+    </body>
+    </html>
+    """
+
+def render_account_approved_email(user_name: str) -> str:
+    now_str = format_datetime_br()
+    return f"""
+    <!DOCTYPE html>
+    <html>
+    <head><meta charset="utf-8"><style>{BASE_CSS}</style></head>
+    <body>
+      <div class="card" style="border: 1px solid #10b981;">
+        <div style="background: linear-gradient(135deg, #065f46, #059669); padding: 28px 30px;">
+          <span style="background-color: #34d399; color: #064e3b; padding: 4px 10px; border-radius: 6px; font-size: 11px; font-weight: bold; text-transform: uppercase;">Acesso Liberado</span>
+          <div style="font-size: 22px; font-weight: bold; color: #ffffff; margin-top: 10px;">🎉 Sua Conta foi Aprovada!</div>
+        </div>
+        <div class="content">
+          <p>Olá, <strong>{user_name}</strong>!</p>
+          <p>Sua conta no <strong>Sentinel Monitor</strong> foi aprovada pelo Administrador Master e seu acesso está liberado.</p>
+          <div class="field">
+            <div class="label">Status</div>
+            <div class="value" style="color: #34d399;">✓ Ativo e Liberado</div>
+          </div>
+          <div class="field">
+            <div class="label">Data de Ativação</div>
+            <div class="value">{now_str}</div>
+          </div>
+          <p style="margin-top: 20px;">
+            Você já pode fazer login na plataforma e começar a monitorar seus servidores e aplicações.
+          </p>
+          {SPAM_NOTICE_HTML}
+        </div>
+        <div class="footer">Sentinel Monitor • Plataforma de Monitoramento</div>
       </div>
     </body>
     </html>

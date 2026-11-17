@@ -53,6 +53,84 @@ async def list_registered_users(
     users = result.scalars().all()
     return users
 
+@router.post("/users/{user_id}/approve", response_model=AdminUserItem)
+async def approve_user(
+    user_id: uuid.UUID,
+    db: AsyncSession = Depends(get_db),
+    admin_user: User = Depends(get_current_active_superuser)
+):
+    """
+    Aprova o acesso de um usuário pendente e envia e-mail de notificação de liberação de conta.
+    """
+    query = select(User).where(User.id == user_id)
+    result = await db.execute(query)
+    target_user = result.scalars().first()
+    if not target_user:
+        raise HTTPException(status_code=404, detail="Usuário não encontrado.")
+
+    target_user.is_active = True
+    await db.commit()
+    await db.refresh(target_user)
+
+    try:
+        import asyncio
+        from app.services.email_service import send_email, render_account_approved_email
+        approved_html = render_account_approved_email(target_user.full_name or "Usuário")
+        asyncio.create_task(send_email(
+            to_emails=[target_user.email],
+            subject="🎉 Sua conta no Sentinel Monitor foi aprovada!",
+            html_body=approved_html
+        ))
+    except Exception:
+        pass
+
+    return target_user
+
+@router.post("/users/{user_id}/toggle-active", response_model=AdminUserItem)
+async def toggle_user_active(
+    user_id: uuid.UUID,
+    db: AsyncSession = Depends(get_db),
+    admin_user: User = Depends(get_current_active_superuser)
+):
+    """
+    Alterna o status ativo/inativo de um usuário cadastrado.
+    """
+    if user_id == admin_user.id:
+        raise HTTPException(status_code=400, detail="Você não pode desativar seu próprio usuário administrador.")
+
+    query = select(User).where(User.id == user_id)
+    result = await db.execute(query)
+    target_user = result.scalars().first()
+    if not target_user:
+        raise HTTPException(status_code=404, detail="Usuário não encontrado.")
+
+    target_user.is_active = not target_user.is_active
+    await db.commit()
+    await db.refresh(target_user)
+    return target_user
+
+@router.delete("/users/{user_id}")
+async def delete_user(
+    user_id: uuid.UUID,
+    db: AsyncSession = Depends(get_db),
+    admin_user: User = Depends(get_current_active_superuser)
+):
+    """
+    Exclui permanentemente um usuário da plataforma.
+    """
+    if user_id == admin_user.id:
+        raise HTTPException(status_code=400, detail="Você não pode excluir seu próprio usuário administrador.")
+
+    query = select(User).where(User.id == user_id)
+    result = await db.execute(query)
+    target_user = result.scalars().first()
+    if not target_user:
+        raise HTTPException(status_code=404, detail="Usuário não encontrado.")
+
+    await db.delete(target_user)
+    await db.commit()
+    return {"message": f"Usuário {target_user.email} excluído com sucesso."}
+
 @router.get("/releases", response_model=List[AgentReleaseResponse])
 async def list_agent_releases(
     db: AsyncSession = Depends(get_db),

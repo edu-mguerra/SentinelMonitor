@@ -14,6 +14,24 @@ export const adminService = {
     return apiClient<AdminUser[]>('/admin/users');
   },
 
+  async approveUser(id: string): Promise<AdminUser> {
+    return apiClient<AdminUser>(`/admin/users/${id}/approve`, {
+      method: 'POST',
+    });
+  },
+
+  async toggleUserActive(id: string): Promise<AdminUser> {
+    return apiClient<AdminUser>(`/admin/users/${id}/toggle-active`, {
+      method: 'POST',
+    });
+  },
+
+  async deleteUser(id: string): Promise<{ message: string }> {
+    return apiClient<{ message: string }>(`/admin/users/${id}`, {
+      method: 'DELETE',
+    });
+  },
+
   async listReleases(): Promise<ReleaseItem[]> {
     return apiClient<ReleaseItem[]>('/admin/releases');
   },
