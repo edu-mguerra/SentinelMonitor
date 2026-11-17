@@ -3,11 +3,13 @@ from datetime import datetime, timezone
 from typing import List, Optional
 from fastapi import APIRouter, Depends, HTTPException, status
 from pydantic import BaseModel, ConfigDict
-from sqlalchemy import select, delete
+from sqlalchemy import select, delete, func
 from sqlalchemy.ext.asyncio import AsyncSession
 from app.api.deps import get_db, get_current_active_superuser
 from app.models.user import User
 from app.models.agent_release import AgentRelease
+from app.models.organization import OrganizationMember, MemberRole
+from app.models.server import Server
 
 router = APIRouter(prefix="/admin", tags=["Administração Master"])
 
@@ -18,6 +20,7 @@ class AdminUserItem(BaseModel):
     is_active: bool
     is_superuser: bool
     created_at: datetime
+    servers_count: int = 0
 
     model_config = ConfigDict(from_attributes=True)
 
@@ -51,7 +54,29 @@ async def list_registered_users(
     query = select(User).order_by(User.created_at.desc())
     result = await db.execute(query)
     users = result.scalars().all()
-    return users
+
+    counts_query = (
+        select(OrganizationMember.user_id, func.count(Server.id))
+        .join(Server, Server.organization_id == OrganizationMember.organization_id)
+        .where(OrganizationMember.role == MemberRole.OWNER)
+        .group_by(OrganizationMember.user_id)
+    )
+    counts_res = await db.execute(counts_query)
+    servers_map = {row[0]: row[1] for row in counts_res.all()}
+
+    output = []
+    for u in users:
+        item = AdminUserItem(
+            id=u.id,
+            email=u.email,
+            full_name=u.full_name,
+            is_active=u.is_active,
+            is_superuser=u.is_superuser,
+            created_at=u.created_at,
+            servers_count=servers_map.get(u.id, 0)
+        )
+        output.append(item)
+    return output
 
 @router.post("/users/{user_id}/approve", response_model=AdminUserItem)
 async def approve_user(

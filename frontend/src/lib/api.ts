@@ -1,6 +1,8 @@
 import Cookies from 'js-cookie';
 
-const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:10203/api/v1';
+const API_BASE_URL = typeof window !== 'undefined'
+  ? '/api/v1'
+  : (process.env.INTERNAL_BACKEND_URL || 'http://127.0.0.1:10203') + '/api/v1';
 
 export interface ApiError {
   message: string;

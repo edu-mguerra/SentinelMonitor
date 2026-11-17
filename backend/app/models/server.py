@@ -11,6 +11,11 @@ class ServerStatus(str, enum.Enum):
     WARNING = "warning"
     PENDING = "pending"
 
+class ShareStatus(str, enum.Enum):
+    PENDING = "pending"
+    ACCEPTED = "accepted"
+    REJECTED = "rejected"
+
 class Server(BaseModel):
     __tablename__ = "servers"
 
@@ -68,6 +73,12 @@ class Server(BaseModel):
         back_populates="server",
         cascade="all, delete-orphan",
         order_by="desc(ServerMetric.recorded_at)",
+        lazy="selectin"
+    )
+    shares = relationship(
+        "ServerShare",
+        back_populates="server",
+        cascade="all, delete-orphan",
         lazy="selectin"
     )
 
@@ -139,3 +150,43 @@ class ServerMetric(BaseModel):
 
     def __repr__(self):
         return f"<ServerMetric server={self.server_id} cpu={self.cpu_percent}% ram={self.ram_percent}% time={self.recorded_at}>"
+
+class ServerShare(BaseModel):
+    """
+    Representa o compartilhamento de uma VPS ('VPS Amiga') entre usuários.
+    Permite que outro usuário acompanhe telemetria e receba alertas da mesma VPS.
+    """
+    __tablename__ = "server_shares"
+
+    server_id = Column(
+        UUID(as_uuid=True),
+        ForeignKey("servers.id", ondelete="CASCADE"),
+        nullable=False,
+        index=True
+    )
+    owner_user_id = Column(
+        UUID(as_uuid=True),
+        ForeignKey("users.id", ondelete="CASCADE"),
+        nullable=False,
+        index=True
+    )
+    shared_with_email = Column(String(255), nullable=False, index=True)
+    shared_with_user_id = Column(
+        UUID(as_uuid=True),
+        ForeignKey("users.id", ondelete="SET NULL"),
+        nullable=True,
+        index=True
+    )
+    status = Column(
+        Enum(ShareStatus, name="server_share_status", native_enum=False),
+        default=ShareStatus.PENDING,
+        nullable=False
+    )
+    accepted_at = Column(DateTime(timezone=True), nullable=True)
+
+    server = relationship("Server", back_populates="shares", lazy="selectin")
+    owner = relationship("User", foreign_keys=[owner_user_id], lazy="selectin")
+    shared_with_user = relationship("User", foreign_keys=[shared_with_user_id], lazy="selectin")
+
+    def __repr__(self):
+        return f"<ServerShare server={self.server_id} to={self.shared_with_email} status={self.status}>"

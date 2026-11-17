@@ -20,6 +20,7 @@ import {
   Trash2,
   AlertCircle,
   AlertTriangle,
+  Server as ServerIcon,
 } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
 import { formatDateBR } from '@/lib/date';
@@ -250,6 +251,7 @@ export default function AdminUsersPage() {
                     <th className="px-6 py-3.5">Usuário / Nome</th>
                     <th className="px-6 py-3.5">E-mail</th>
                     <th className="px-6 py-3.5">Tipo de Conta</th>
+                    <th className="px-6 py-3.5">VPSs / Servidores</th>
                     <th className="px-6 py-3.5">Data de Cadastro</th>
                     <th className="px-6 py-3.5">Status</th>
                     <th className="px-6 py-3.5 text-right">Ações</th>
@@ -299,6 +301,15 @@ export default function AdminUsersPage() {
                               Usuário Cliente
                             </span>
                           )}
+                        </td>
+                        <td className="px-6 py-4">
+                          <div className="flex items-center gap-1.5">
+                            <ServerIcon className="w-3.5 h-3.5 text-blue-400" />
+                            <span className="font-mono text-xs font-bold text-white">
+                              {u.servers_count ?? 0}
+                            </span>
+                            <span className="text-[11px] text-slate-500">VPS</span>
+                          </div>
                         </td>
                         <td className="px-6 py-4 text-xs text-slate-400">
                           <div className="flex items-center gap-1.5">

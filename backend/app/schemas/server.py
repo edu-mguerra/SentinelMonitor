@@ -77,3 +77,43 @@ class ServerDetailResponse(ServerResponse):
     metrics: List[ServerMetricResponse] = []
 
     model_config = ConfigDict(from_attributes=True)
+
+class ServerShareCreate(BaseModel):
+    email: str = Field(..., description="E-mail do usuário para compartilhar a VPS Amiga")
+
+class ServerShareResponse(BaseModel):
+    id: uuid.UUID
+    server_id: uuid.UUID
+    shared_with_email: str
+    shared_with_name: Optional[str] = None
+    status: str
+    created_at: datetime
+    accepted_at: Optional[datetime] = None
+
+    model_config = ConfigDict(from_attributes=True)
+
+class SharedServerResponse(BaseModel):
+    share_id: uuid.UUID
+    server: ServerResponse
+    owner_name: str
+    owner_email: str
+    shared_at: datetime
+
+    model_config = ConfigDict(from_attributes=True)
+
+class ShareInviteResponse(BaseModel):
+    id: uuid.UUID
+    server_id: uuid.UUID
+    server_name: str
+    owner_name: str
+    owner_email: str
+    created_at: datetime
+
+    model_config = ConfigDict(from_attributes=True)
+
+class UserSearchResult(BaseModel):
+    id: uuid.UUID
+    email: str
+    full_name: Optional[str] = None
+
+    model_config = ConfigDict(from_attributes=True)

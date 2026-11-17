@@ -1,5 +1,14 @@
 import { apiClient } from '@/lib/api';
-import { Server, ServerDetail, ServerWithInstallCommand, AgentReleaseInfo } from '@/types/server';
+import {
+  Server,
+  ServerDetail,
+  ServerWithInstallCommand,
+  AgentReleaseInfo,
+  ServerShare,
+  SharedServerItem,
+  ShareInviteItem,
+  UserSearchResult,
+} from '@/types/server';
 
 export const serversService = {
   async listServers(orgId: string): Promise<Server[]> {
@@ -51,5 +60,50 @@ export const serversService = {
 
   async getAgentRelease(): Promise<AgentReleaseInfo> {
     return apiClient<AgentReleaseInfo>('/agent-release');
+  },
+
+  async listServerShares(orgId: string, serverId: string): Promise<ServerShare[]> {
+    return apiClient<ServerShare[]>(`/organizations/${orgId}/servers/${serverId}/shares`);
+  },
+
+  async inviteServerShare(orgId: string, serverId: string, email: string): Promise<ServerShare> {
+    return apiClient<ServerShare>(`/organizations/${orgId}/servers/${serverId}/shares`, {
+      method: 'POST',
+      body: JSON.stringify({ email }),
+    });
+  },
+
+  async revokeServerShare(orgId: string, serverId: string, shareId: string): Promise<void> {
+    return apiClient<void>(`/organizations/${orgId}/servers/${serverId}/shares/${shareId}`, {
+      method: 'DELETE',
+    });
+  },
+
+  async listSharedServers(): Promise<SharedServerItem[]> {
+    return apiClient<SharedServerItem[]>('/shared-servers');
+  },
+
+  async listPendingInvites(): Promise<ShareInviteItem[]> {
+    return apiClient<ShareInviteItem[]>('/shared-servers/invites');
+  },
+
+  async acceptInvite(shareId: string): Promise<SharedServerItem> {
+    return apiClient<SharedServerItem>(`/shared-servers/invites/${shareId}/accept`, {
+      method: 'POST',
+    });
+  },
+
+  async rejectInvite(shareId: string): Promise<void> {
+    return apiClient<void>(`/shared-servers/invites/${shareId}/reject`, {
+      method: 'POST',
+    });
+  },
+
+  async getSharedServerDetail(serverId: string): Promise<ServerDetail> {
+    return apiClient<ServerDetail>(`/shared-servers/${serverId}`);
+  },
+
+  async searchUsers(query: string): Promise<UserSearchResult[]> {
+    return apiClient<UserSearchResult[]>(`/users/search-shareable?query=${encodeURIComponent(query)}`);
   },
 };

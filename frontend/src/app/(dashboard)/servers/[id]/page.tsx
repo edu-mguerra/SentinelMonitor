@@ -105,14 +105,31 @@ export default function ServerDetailPage({ params }: { params: Promise<{ id: str
   const [saveSuccess, setSaveSuccess] = useState(false);
   const [saveError, setSaveError] = useState('');
 
+  const [isSharedServer, setIsSharedServer] = useState(false);
+
   const fetchServer = async () => {
-    if (!currentOrganization) return;
     try {
-      const [data, release] = await Promise.all([
-        serversService.getServer(currentOrganization.id, serverId),
-        serversService.getAgentRelease().catch(() => null),
-      ]);
-      setServer(data);
+      let data: ServerDetail | null = null;
+      const isSharedParam = typeof window !== 'undefined' && window.location.search.includes('shared=1');
+
+      if (isSharedParam) {
+        data = await serversService.getSharedServerDetail(serverId);
+        setIsSharedServer(true);
+      } else if (currentOrganization) {
+        try {
+          data = await serversService.getServer(currentOrganization.id, serverId);
+          setIsSharedServer(false);
+        } catch {
+          data = await serversService.getSharedServerDetail(serverId);
+          setIsSharedServer(true);
+        }
+      } else {
+        data = await serversService.getSharedServerDetail(serverId);
+        setIsSharedServer(true);
+      }
+
+      const release = await serversService.getAgentRelease().catch(() => null);
+      if (data) setServer(data);
       if (release) setAgentRelease(release);
     } catch (err) {
       console.error('Erro ao carregar detalhes do servidor:', err);
@@ -255,6 +272,15 @@ export default function ServerDetailPage({ params }: { params: Promise<{ id: str
       <Header title={`Telemetria: ${server.name}`} />
 
       <main className="flex-1 p-8 space-y-8">
+        {isSharedServer && (
+          <div className="p-3.5 bg-blue-950/60 border border-blue-800/80 rounded-2xl flex items-center gap-3 text-xs text-blue-200 shadow-sm animate-in fade-in">
+            <Users className="w-4 h-4 text-blue-400 shrink-0" />
+            <span>
+              <strong>VPS Amiga:</strong> Você está visualizando este servidor através de compartilhamento com a sua conta. Todos os alertas críticos deste host também serão enviados para o seu e-mail.
+            </span>
+          </div>
+        )}
+
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
           <div className="flex items-center gap-4">
             <Link

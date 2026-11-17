@@ -388,8 +388,87 @@ def render_account_approved_email(user_name: str) -> str:
     </html>
     """
 
+def render_vps_share_invite_email(owner_name: str, owner_email: str, server_name: str) -> str:
+    now_str = format_datetime_br()
+    return f"""
+    <!DOCTYPE html>
+    <html>
+    <head><meta charset="utf-8"><style>{BASE_CSS}</style></head>
+    <body>
+      <div class="card" style="border: 1px solid #3b82f6;">
+        <div style="background: linear-gradient(135deg, #1e3a8a, #2563eb); padding: 28px 30px;">
+          <span style="background-color: #60a5fa; color: #0f172a; padding: 4px 10px; border-radius: 6px; font-size: 11px; font-weight: bold; text-transform: uppercase;">VPS Amiga</span>
+          <div style="font-size: 22px; font-weight: bold; color: #ffffff; margin-top: 10px;">🤝 Convite de Acesso a Servidor</div>
+        </div>
+        <div class="content">
+          <p>Olá!</p>
+          <p><strong>{owner_name}</strong> ({owner_email}) compartilhou o monitoramento da VPS <strong>{server_name}</strong> com você no Sentinel Monitor.</p>
+          <div class="field">
+            <div class="label">Servidor Compartilhado</div>
+            <div class="value">{server_name}</div>
+          </div>
+          <div class="field">
+            <div class="label">Proprietário</div>
+            <div class="value">{owner_name} ({owner_email})</div>
+          </div>
+          <div class="field">
+            <div class="label">Data do Convite</div>
+            <div class="value">{now_str}</div>
+          </div>
+          <p style="margin-top: 20px;">
+            Ao aceitar este convite no painel, você poderá acompanhar os gráficos de CPU, memória, processos PM2, containers Docker e também <strong>receberá alertas instantâneos por e-mail</strong> sempre que este servidor sofrer instabilidade.
+          </p>
+          <p style="margin-top: 12px; font-size: 13px; color: #94a3b8;">
+            Acesse o Sentinel Monitor na aba <strong>Servidores</strong> para aceitar o convite.
+          </p>
+          {SPAM_NOTICE_HTML}
+        </div>
+        <div class="footer">Sentinel Monitor • Monitoramento Colaborativo de Servidores</div>
+      </div>
+    </body>
+    </html>
+    """
+
+def render_vps_share_accepted_email(guest_name: str, guest_email: str, server_name: str) -> str:
+    now_str = format_datetime_br()
+    return f"""
+    <!DOCTYPE html>
+    <html>
+    <head><meta charset="utf-8"><style>{BASE_CSS}</style></head>
+    <body>
+      <div class="card" style="border: 1px solid #10b981;">
+        <div style="background: linear-gradient(135deg, #064e3b, #047857); padding: 28px 30px;">
+          <span style="background-color: #34d399; color: #064e3b; padding: 4px 10px; border-radius: 6px; font-size: 11px; font-weight: bold; text-transform: uppercase;">VPS Amiga Conectada</span>
+          <div style="font-size: 22px; font-weight: bold; color: #ffffff; margin-top: 10px;">🤝 Convite Aceito com Sucesso!</div>
+        </div>
+        <div class="content">
+          <p>Olá!</p>
+          <p><strong>{guest_name}</strong> ({guest_email}) aceitou seu convite de VPS Amiga para monitorar o servidor <strong>{server_name}</strong>.</p>
+          <div class="field">
+            <div class="label">Servidor</div>
+            <div class="value">{server_name}</div>
+          </div>
+          <div class="field">
+            <div class="label">Usuário Conectado</div>
+            <div class="value">{guest_name} ({guest_email})</div>
+          </div>
+          <div class="field">
+            <div class="label">Horário de Conexão</div>
+            <div class="value">{now_str}</div>
+          </div>
+          <p style="margin-top: 20px;">
+            A partir de agora, este usuário possui acesso de visualização à telemetria deste servidor e também receberá notificações automáticas de incidentes.
+          </p>
+          {SPAM_NOTICE_HTML}
+        </div>
+        <div class="footer">Sentinel Monitor • Compartilhamento de VPS</div>
+      </div>
+    </body>
+    </html>
+    """
+
 def render_test_email(org_name: str) -> str:
-    now_str = datetime.now().strftime("%d/%m/%Y às %H:%M:%S")
+    now_str = format_datetime_br()
     return f"""
     <!DOCTYPE html>
     <html>

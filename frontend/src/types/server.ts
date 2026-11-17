@@ -154,3 +154,36 @@ export interface AgentReleaseInfo {
     macos: string;
   };
 }
+
+export interface ServerShare {
+  id: string;
+  server_id: string;
+  shared_with_email: string;
+  shared_with_name?: string | null;
+  status: 'pending' | 'accepted' | 'rejected';
+  created_at: string;
+  accepted_at?: string | null;
+}
+
+export interface SharedServerItem {
+  share_id: string;
+  server: Server;
+  owner_name: string;
+  owner_email: string;
+  shared_at: string;
+}
+
+export interface ShareInviteItem {
+  id: string;
+  server_id: string;
+  server_name: string;
+  owner_name: string;
+  owner_email: string;
+  created_at: string;
+}
+
+export interface UserSearchResult {
+  id: string;
+  email: string;
+  full_name?: string | null;
+}

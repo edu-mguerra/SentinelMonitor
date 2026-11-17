@@ -50,4 +50,5 @@ export interface AdminUser {
   is_active: boolean;
   is_superuser: boolean;
   created_at: string;
+  servers_count?: number;
 }

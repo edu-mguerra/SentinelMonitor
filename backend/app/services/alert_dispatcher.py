@@ -8,7 +8,8 @@ from app.models.incident import Incident, IncidentStatus, IncidentSeverity
 from app.models.alert import AlertChannel, AlertChannelType, AlertRule, AlertHistory
 from app.models.organization import OrganizationMember, MemberRole
 from app.models.user import User
-from app.models.server import Server, ServerStatus
+from app.models.server import Server, ServerStatus, ServerShare, ShareStatus
+from app.models.monitor import Monitor
 from app.services.email_service import (
     send_email,
     render_incident_alert_email,
@@ -53,26 +54,53 @@ async def get_org_alert_emails(db: AsyncSession, organization_id) -> List[str]:
     owner_email = owner_res.scalars().first()
     return [owner_email] if owner_email else []
 
+async def get_server_alert_emails(db: AsyncSession, server: Server) -> List[str]:
+    recipients = await get_org_alert_emails(db, server.organization_id)
+
+    share_query = select(ServerShare.shared_with_email).where(
+        and_(
+            ServerShare.server_id == server.id,
+            ServerShare.status == ShareStatus.ACCEPTED
+        )
+    )
+    share_res = await db.execute(share_query)
+    shared_emails = [e.strip() for e in share_res.scalars().all() if e and "@" in e]
+
+    all_emails = list(dict.fromkeys(recipients + shared_emails))
+    return all_emails
+
 async def notify_incident_created(db: AsyncSession, incident: Incident) -> None:
     """Dispara e-mail de alerta quando um incidente de indisponibilidade é aberto."""
     try:
-        recipients = await get_org_alert_emails(db, incident.organization_id)
-        if not recipients:
-            logger.info(f"Nenhum destinatário de e-mail encontrado para a organização {incident.organization_id}")
-            return
-
         subject = f"🚨 [ALERTA CRÍTICO] {incident.title}"
         resource_name = "Recurso Monitorado"
         resource_type = "Serviço"
+        recipients: List[str] = []
 
-        if incident.monitor:
-            resource_name = incident.monitor.name
-            resource_type = incident.monitor.type.value.upper()
+        if incident.monitor_id:
+            m_res = await db.execute(select(Monitor).where(Monitor.id == incident.monitor_id))
+            mon = m_res.scalars().first()
+            if mon:
+                resource_name = mon.name
+                resource_type = f"Monitor Web ({mon.type.value.upper()}: {mon.target})"
+                subject = f"🚨 [ALERTA CRÍTICO] Indisponibilidade em '{mon.name}' ({mon.target})"
+            recipients = await get_org_alert_emails(db, incident.organization_id)
         elif incident.server_id:
-            srv = (await db.execute(select(Server).where(Server.id == incident.server_id))).scalars().first()
+            s_res = await db.execute(select(Server).where(Server.id == incident.server_id))
+            srv = s_res.scalars().first()
             if srv:
                 resource_name = srv.name
-                resource_type = "Servidor Linux VPS"
+                resource_type = f"Servidor VPS ({srv.hostname or 'Host'})"
+                subject = f"🚨 [ALERTA CRÍTICO] Falha no Servidor '{srv.name}'"
+                recipients = await get_server_alert_emails(db, srv)
+            else:
+                recipients = await get_org_alert_emails(db, incident.organization_id)
+        else:
+            recipients = await get_org_alert_emails(db, incident.organization_id)
+
+        if not recipients:
+            logger.info(f"Nenhum destinatário de e-mail encontrado para o incidente {incident.id}")
+            return
 
         html_body = render_incident_alert_email(
             incident_title=incident.title,
@@ -107,14 +135,29 @@ async def notify_incident_resolved(db: AsyncSession, incident: Incident) -> None
         if rule and not rule.notify_on_recovery:
             return
 
-        recipients = await get_org_alert_emails(db, incident.organization_id)
-        if not recipients:
-            return
-
         subject = f"✅ [RESTABELECIDO] {incident.title}"
         resource_name = incident.title
-        if incident.monitor:
-            resource_name = incident.monitor.name
+        recipients: List[str] = []
+
+        if incident.monitor_id:
+            m_res = await db.execute(select(Monitor).where(Monitor.id == incident.monitor_id))
+            mon = m_res.scalars().first()
+            if mon:
+                resource_name = f"{mon.name} ({mon.target})"
+            recipients = await get_org_alert_emails(db, incident.organization_id)
+        elif incident.server_id:
+            s_res = await db.execute(select(Server).where(Server.id == incident.server_id))
+            srv = s_res.scalars().first()
+            if srv:
+                resource_name = f"Servidor {srv.name}"
+                recipients = await get_server_alert_emails(db, srv)
+            else:
+                recipients = await get_org_alert_emails(db, incident.organization_id)
+        else:
+            recipients = await get_org_alert_emails(db, incident.organization_id)
+
+        if not recipients:
+            return
 
         duration_str = "--"
         if incident.resolved_at and incident.started_at:
@@ -209,7 +252,7 @@ async def check_servers_offline_job(db: AsyncSession) -> None:
                 await db.commit()
                 await db.refresh(incident)
 
-                recipients = await get_org_alert_emails(db, srv.organization_id)
+                recipients = await get_server_alert_emails(db, srv)
                 if recipients:
                     subject = f"🚨 [VPS DESCONECTADA] O servidor '{srv.name}' parou de responder"
                     html_body = render_vps_offline_email(
@@ -282,7 +325,7 @@ async def check_server_hardware_thresholds(
         if recent_alert.scalars().first():
             return
 
-        recipients = await get_org_alert_emails(db, server.organization_id)
+        recipients = await get_server_alert_emails(db, server)
         if recipients:
             subject = f"⚠️ [ALERTA DE HARDWARE] {exceeded_metric} atingiu {current_val}% na VPS '{server.name}'"
             html_body = render_hardware_alert_email(
