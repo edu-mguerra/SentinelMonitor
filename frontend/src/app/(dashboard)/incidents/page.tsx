@@ -66,7 +66,7 @@ export default function IncidentsPage() {
     <div className="flex-1 flex flex-col min-h-screen">
       <Header title="Histórico de Incidentes & Alarmes" />
 
-      <main className="flex-1 p-8 space-y-6">
+      <main className="flex-1 p-4 sm:p-6 lg:p-8 space-y-6">
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
           <div>
             <h2 className="text-xl font-bold text-white tracking-tight">Registro de Incidentes</h2>

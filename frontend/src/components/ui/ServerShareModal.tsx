@@ -128,7 +128,7 @@ export function ServerShareModal({
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/80 backdrop-blur-sm animate-in fade-in">
-      <div className="bg-slate-900 border border-slate-800 rounded-2xl w-full max-w-lg p-6 shadow-2xl space-y-6 max-h-[90vh] overflow-y-auto">
+      <div className="bg-slate-900 border border-slate-800 rounded-2xl w-full max-w-lg p-4 sm:p-6 shadow-2xl space-y-5 sm:space-y-6 max-h-[90vh] overflow-y-auto">
         <div className="flex items-center justify-between pb-4 border-b border-slate-800">
           <div className="flex items-center gap-3">
             <div className="p-2.5 bg-blue-600/20 border border-blue-500/30 rounded-xl text-blue-400">
@@ -190,7 +190,7 @@ export function ServerShareModal({
             Pesquise o usuário ou digite o e-mail:
           </label>
           <div className="relative">
-            <div className="flex items-center gap-2">
+            <div className="flex flex-col sm:flex-row sm:items-center gap-2">
               <div className="relative flex-1">
                 <Mail className="w-4 h-4 text-slate-500 absolute left-3 top-1/2 -translate-y-1/2" />
                 <input
@@ -204,7 +204,7 @@ export function ServerShareModal({
               <button
                 type="submit"
                 disabled={inviting || !emailInput.trim()}
-                className="px-4 py-2 bg-blue-600 hover:bg-blue-500 text-white rounded-xl text-xs font-semibold flex items-center gap-1.5 transition-colors disabled:opacity-50 shrink-0 shadow-sm"
+                className="px-4 py-2 bg-blue-600 hover:bg-blue-500 text-white rounded-xl text-xs font-semibold flex items-center justify-center gap-1.5 transition-colors disabled:opacity-50 shrink-0 shadow-sm"
               >
                 <UserPlus className={`w-3.5 h-3.5 ${inviting ? 'animate-spin' : ''}`} />
                 {inviting ? 'Enviando...' : 'Convidar'}

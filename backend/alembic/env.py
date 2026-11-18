@@ -4,12 +4,11 @@ import sys
 from sqlalchemy import engine_from_config, pool
 from alembic import context
 
-# Adiciona o diretório atual ao path para importar a app
 sys.path.insert(0, os.path.realpath(os.path.join(os.path.dirname(__file__), "..")))
 
 from app.core.config import settings
 from app.database.session import Base
-import app.models  # noqa: F401
+import app.models
 
 config = context.config
 

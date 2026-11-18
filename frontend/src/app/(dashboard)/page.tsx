@@ -54,11 +54,10 @@ export default function DashboardPage() {
     <div className="flex-1 flex flex-col min-h-screen">
       <Header title="Visão Geral da Infraestrutura" />
 
-      <main className="flex-1 p-8 space-y-8">
-
+      <main className="flex-1 p-4 sm:p-6 lg:p-8 space-y-6 sm:space-y-8">
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
           <div>
-            <h2 className="text-xl font-bold text-white tracking-tight">
+            <h2 className="text-lg sm:text-xl font-bold text-white tracking-tight">
               Monitoramento em Tempo Real
             </h2>
             <p className="text-xs text-slate-400 mt-0.5">
@@ -68,14 +67,14 @@ export default function DashboardPage() {
           <button
             onClick={fetchData}
             disabled={loading}
-            className="flex items-center gap-2 px-3.5 py-2 text-xs font-medium text-slate-300 bg-slate-900 hover:bg-slate-800 border border-slate-800 rounded-xl transition-all self-start"
+            className="flex items-center gap-2 px-3.5 py-2 text-xs font-medium text-slate-300 bg-slate-900 hover:bg-slate-800 border border-slate-800 rounded-xl transition-all self-start sm:self-auto"
           >
             <RefreshCw className={`w-3.5 h-3.5 ${loading ? 'animate-spin text-blue-400' : ''}`} />
             Atualizar
           </button>
         </div>
 
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-5">
           <MetricCard
             title="Servidores (VPS)"
             value={`${onlineServers} / ${servers.length}`}
@@ -105,13 +104,12 @@ export default function DashboardPage() {
           />
         </div>
 
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-
-          <div className="bg-slate-900/90 border border-slate-800 rounded-2xl p-6 shadow-sm flex flex-col justify-between">
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 lg:gap-8">
+          <div className="bg-slate-900/90 border border-slate-800 rounded-2xl p-4 sm:p-6 shadow-sm flex flex-col justify-between">
             <div>
               <div className="flex items-center justify-between mb-5">
                 <div className="flex items-center gap-2.5">
-                  <ServerIcon className="w-5 h-5 text-blue-400" />
+                  <ServerIcon className="w-5 h-5 text-blue-400 shrink-0" />
                   <h3 className="text-base font-semibold text-white">Servidores Recentes</h3>
                 </div>
                 <Link
@@ -132,25 +130,22 @@ export default function DashboardPage() {
               ) : (
                 <div className="divide-y divide-slate-800/80">
                   {servers.slice(0, 5).map((srv) => (
-                    <div key={srv.id} className="py-3 flex items-center justify-between text-sm">
-                      <div>
+                    <div key={srv.id} className="py-3 flex items-center justify-between text-sm gap-2">
+                      <div className="min-w-0 flex-1">
                         <Link
                           href={`/servers/${srv.id}`}
-                          className="font-medium text-white hover:text-blue-400 transition-colors"
+                          className="font-medium text-white hover:text-blue-400 transition-colors truncate block"
                         >
                           {srv.name}
                         </Link>
-                        <p className="text-xs text-slate-500">
+                        <p className="text-xs text-slate-500 truncate">
                           {srv.hostname || 'Sem hostname'} • {srv.os_name || 'Linux'}
                         </p>
                       </div>
-                      <div className="flex items-center gap-4">
+                      <div className="flex items-center gap-3 shrink-0">
                         <div className="text-right hidden sm:block">
                           <span className="text-xs text-slate-300 font-mono">
                             CPU: {srv.last_cpu_percent !== null ? `${srv.last_cpu_percent}%` : '--'}
-                          </span>
-                          <span className="text-xs text-slate-500 font-mono block">
-                            RAM: {srv.last_ram_percent !== null ? `${srv.last_ram_percent}%` : '--'}
                           </span>
                         </div>
                         <StatusBadge status={srv.status} />
@@ -160,14 +155,26 @@ export default function DashboardPage() {
                 </div>
               )}
             </div>
+
+            <div className="pt-4 mt-4 border-t border-slate-800/80 flex items-center justify-between">
+              <span className="text-xs text-slate-500">
+                {servers.length} servidor(es) cadastrado(s)
+              </span>
+              <Link
+                href="/servers"
+                className="text-xs font-semibold text-blue-400 hover:text-blue-300 flex items-center gap-1"
+              >
+                Gerenciar servidores <ArrowUpRight className="w-3 h-3" />
+              </Link>
+            </div>
           </div>
 
-          <div className="bg-slate-900/90 border border-slate-800 rounded-2xl p-6 shadow-sm flex flex-col justify-between">
+          <div className="bg-slate-900/90 border border-slate-800 rounded-2xl p-4 sm:p-6 shadow-sm flex flex-col justify-between">
             <div>
               <div className="flex items-center justify-between mb-5">
                 <div className="flex items-center gap-2.5">
-                  <Globe className="w-5 h-5 text-emerald-400" />
-                  <h3 className="text-base font-semibold text-white">Monitores Web & TCP</h3>
+                  <Globe className="w-5 h-5 text-emerald-400 shrink-0" />
+                  <h3 className="text-base font-semibold text-white">Monitores Web Recentes</h3>
                 </div>
                 <Link
                   href="/monitors"
@@ -179,7 +186,7 @@ export default function DashboardPage() {
 
               {monitors.length === 0 ? (
                 <div className="py-12 text-center text-slate-500 text-sm border border-dashed border-slate-800 rounded-xl">
-                  Nenhum monitor configurado.{' '}
+                  Nenhum monitor HTTP/TCP cadastrado.{' '}
                   <Link href="/monitors" className="text-blue-400 hover:underline">
                     Criar primeiro monitor
                   </Link>
@@ -187,13 +194,15 @@ export default function DashboardPage() {
               ) : (
                 <div className="divide-y divide-slate-800/80">
                   {monitors.slice(0, 5).map((mon) => (
-                    <div key={mon.id} className="py-3 flex items-center justify-between text-sm">
-                      <div className="truncate mr-2">
+                    <div key={mon.id} className="py-3 flex items-center justify-between text-sm gap-2">
+                      <div className="min-w-0 flex-1">
                         <span className="font-medium text-white truncate block">{mon.name}</span>
-                        <p className="text-xs text-slate-500 truncate font-mono">{mon.target}</p>
+                        <p className="text-xs text-slate-500 truncate font-mono">
+                          {mon.target}
+                        </p>
                       </div>
-                      <div className="flex items-center gap-4 shrink-0">
-                        <span className="text-xs text-slate-400 uppercase font-mono px-2 py-0.5 bg-slate-950 rounded">
+                      <div className="flex items-center gap-3 shrink-0">
+                        <span className="text-xs text-slate-400 hidden sm:inline uppercase font-mono text-[10px] px-1.5 py-0.5 rounded bg-slate-800">
                           {mon.type}
                         </span>
                         <StatusBadge status={mon.status} />
@@ -202,6 +211,18 @@ export default function DashboardPage() {
                   ))}
                 </div>
               )}
+            </div>
+
+            <div className="pt-4 mt-4 border-t border-slate-800/80 flex items-center justify-between">
+              <span className="text-xs text-slate-500">
+                {monitors.length} monitor(es) ativo(s)
+              </span>
+              <Link
+                href="/monitors"
+                className="text-xs font-semibold text-blue-400 hover:text-blue-300 flex items-center gap-1"
+              >
+                Gerenciar monitores <ArrowUpRight className="w-3 h-3" />
+              </Link>
             </div>
           </div>
         </div>

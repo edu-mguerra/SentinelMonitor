@@ -48,6 +48,8 @@ export default function RegisterPage() {
 
     const container = document.getElementById('google-btn-wrapper-reg');
     if (container) {
+      const measured = Math.floor(container.getBoundingClientRect().width);
+      const btnWidth = measured > 0 ? Math.max(200, Math.min(380, measured)) : 260;
       container.innerHTML = '';
       window.google.accounts.id.renderButton(container, {
         type: 'standard',
@@ -56,7 +58,7 @@ export default function RegisterPage() {
         text: 'signup_with',
         shape: 'rectangular',
         logo_alignment: 'left',
-        width: 380,
+        width: btnWidth,
       });
     }
   };
@@ -65,6 +67,20 @@ export default function RegisterPage() {
     if (window.google?.accounts?.id) {
       setupGoogleSignIn();
     }
+    const container = document.getElementById('google-btn-wrapper-reg');
+    if (!container || typeof ResizeObserver === 'undefined') return;
+    let lastWidth = Math.floor(container.getBoundingClientRect().width);
+    const observer = new ResizeObserver((entries) => {
+      for (const entry of entries) {
+        const w = Math.floor(entry.contentRect.width);
+        if (w > 0 && Math.abs(w - lastWidth) > 4 && window.google?.accounts?.id) {
+          lastWidth = w;
+          setupGoogleSignIn();
+        }
+      }
+    });
+    observer.observe(container);
+    return () => observer.disconnect();
   }, []);
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -100,7 +116,7 @@ export default function RegisterPage() {
         onLoad={setupGoogleSignIn}
       />
 
-      <div className="w-full max-w-md bg-slate-900 border border-slate-800 rounded-2xl p-8 shadow-2xl">
+      <div className="w-full max-w-md bg-slate-900 border border-slate-800 rounded-2xl p-6 sm:p-8 shadow-2xl">
         <div className="flex flex-col items-center mb-6">
           <div className="p-3 bg-blue-600/20 border border-blue-500/30 rounded-2xl text-blue-400 mb-3">
             <ShieldCheck className="w-8 h-8" />
@@ -204,7 +220,7 @@ export default function RegisterPage() {
           </div>
         </div>
 
-        <div className="w-full flex flex-col items-center justify-center min-h-[44px]">
+        <div className="w-full max-w-full overflow-hidden flex flex-col items-center justify-center min-h-[44px]">
           <div id="google-btn-wrapper-reg" className="w-full flex justify-center" />
         </div>
 

@@ -162,7 +162,7 @@ export default function ServersPage() {
     <div className="flex-1 flex flex-col min-h-screen">
       <Header title="Servidores Monitorados (VPS)" />
 
-      <main className="flex-1 p-8 space-y-6">
+      <main className="flex-1 p-4 sm:p-6 lg:p-8 space-y-6">
         {pendingInvites.length > 0 && (
           <div className="p-4 bg-gradient-to-r from-blue-950/70 to-slate-900 border border-blue-800/80 rounded-2xl shadow-lg space-y-3 animate-in fade-in">
             <div className="flex items-center gap-2.5 text-blue-300">
@@ -266,11 +266,11 @@ export default function ServersPage() {
           </div>
         </div>
 
-        <div className="flex items-center gap-2 border-b border-slate-800">
+        <div className="flex items-center gap-2 border-b border-slate-800 overflow-x-auto pb-px">
           <button
             type="button"
             onClick={() => setActiveTab('my_servers')}
-            className={`flex items-center gap-2 px-4 py-3 text-xs font-semibold rounded-t-xl transition-all border-b-2 -mb-px ${
+            className={`flex items-center gap-2 px-4 py-3 text-xs font-semibold rounded-t-xl transition-all border-b-2 -mb-px shrink-0 ${
               activeTab === 'my_servers'
                 ? 'border-blue-500 text-blue-400 bg-slate-900/60'
                 : 'border-transparent text-slate-400 hover:text-slate-200 hover:bg-slate-900/30'
@@ -283,7 +283,7 @@ export default function ServersPage() {
           <button
             type="button"
             onClick={() => setActiveTab('shared_servers')}
-            className={`flex items-center gap-2 px-4 py-3 text-xs font-semibold rounded-t-xl transition-all border-b-2 -mb-px ${
+            className={`flex items-center gap-2 px-4 py-3 text-xs font-semibold rounded-t-xl transition-all border-b-2 -mb-px shrink-0 ${
               activeTab === 'shared_servers'
                 ? 'border-blue-500 text-blue-400 bg-slate-900/60'
                 : 'border-transparent text-slate-400 hover:text-slate-200 hover:bg-slate-900/30'
@@ -408,8 +408,8 @@ export default function ServersPage() {
                       )}
                     </div>
 
-                    <div className="flex items-center justify-between pt-3 border-t border-slate-800/80">
-                      <div className="flex items-center gap-3">
+                    <div className="flex items-center justify-between pt-3 border-t border-slate-800/80 flex-wrap gap-2">
+                      <div className="flex items-center gap-3 flex-wrap">
                         {srv.status === 'pending' ? (
                           <button
                             onClick={(e) => handleShowInstallCmd(srv.id, e)}
@@ -474,7 +474,7 @@ export default function ServersPage() {
                       className="bg-slate-900 border border-slate-800 rounded-2xl p-5 shadow-sm hover:border-slate-700 transition-all flex flex-col justify-between"
                     >
                       <div>
-                        <div className="mb-3 px-2.5 py-1 rounded-lg bg-blue-500/10 border border-blue-500/20 flex items-center justify-between text-[11px] text-blue-300">
+                        <div className="mb-3 px-2.5 py-1.5 rounded-lg bg-blue-500/10 border border-blue-500/20 flex flex-wrap items-center justify-between gap-1 text-[11px] text-blue-300">
                           <span className="flex items-center gap-1.5 truncate">
                             <Users className="w-3.5 h-3.5 text-blue-400 shrink-0" />
                             De: <strong>{item.owner_name}</strong>
@@ -558,7 +558,7 @@ export default function ServersPage() {
 
       {isAddModalOpen && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/75 backdrop-blur-sm">
-          <div className="w-full max-w-md bg-slate-900 border border-slate-800 rounded-2xl p-6 shadow-2xl">
+          <div className="w-full max-w-md bg-slate-900 border border-slate-800 rounded-2xl p-4 sm:p-6 shadow-2xl max-h-[90vh] overflow-y-auto">
             <h3 className="text-lg font-semibold text-white mb-1">Adicionar Novo Servidor</h3>
             <p className="text-xs text-slate-400 mb-4">
               Informe um nome amigável para identificar esta máquina no dashboard.

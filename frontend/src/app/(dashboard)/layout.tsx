@@ -4,6 +4,7 @@ import React, { useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { useAuth } from '@/contexts/AuthContext';
 import { Sidebar } from '@/components/layout/Sidebar';
+import { MobileMenuProvider } from '@/contexts/MobileMenuContext';
 import { ShieldCheck } from 'lucide-react';
 
 export default function DashboardLayout({ children }: { children: React.ReactNode }) {
@@ -18,7 +19,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
 
   if (isLoading) {
     return (
-      <div className="min-h-screen bg-slate-950 flex flex-col items-center justify-center gap-4 text-slate-400">
+      <div className="min-h-screen bg-slate-950 flex flex-col items-center justify-center gap-4 text-slate-400 p-4 text-center">
         <div className="p-3 bg-blue-600/20 border border-blue-500/30 rounded-2xl text-blue-400 animate-pulse">
           <ShieldCheck className="w-10 h-10" />
         </div>
@@ -35,11 +36,13 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
   }
 
   return (
-    <div className="flex h-screen overflow-hidden bg-slate-950">
-      <Sidebar />
-      <div className="flex-1 flex flex-col min-w-0 overflow-y-auto">
-        {children}
+    <MobileMenuProvider>
+      <div className="flex h-screen overflow-hidden bg-slate-950 relative">
+        <Sidebar />
+        <div className="flex-1 flex flex-col min-w-0 overflow-y-auto">
+          {children}
+        </div>
       </div>
-    </div>
+    </MobileMenuProvider>
   );
 }

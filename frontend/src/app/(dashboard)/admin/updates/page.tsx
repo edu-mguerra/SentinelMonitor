@@ -167,7 +167,7 @@ export default function AdminUpdatesPage() {
     <div className="flex-1 flex flex-col min-h-screen">
       <Header title="Lançamento de Atualizações (Painel Master)" />
 
-      <main className="flex-1 p-8 space-y-6 max-w-6xl">
+      <main className="flex-1 p-4 sm:p-6 lg:p-8 space-y-6 max-w-6xl">
 
         <div className="p-4 bg-slate-900 border border-slate-800 rounded-2xl flex items-start justify-between gap-4 shadow-sm flex-wrap">
           <div className="flex items-start gap-3.5">
@@ -409,7 +409,7 @@ export default function AdminUpdatesPage() {
 
       {isCreateModalOpen && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/75 backdrop-blur-sm animate-fade-in">
-          <div className="relative w-full max-w-xl bg-slate-900 border border-slate-800 rounded-2xl p-6 shadow-2xl max-h-[90vh] overflow-y-auto">
+          <div className="relative w-full max-w-xl bg-slate-900 border border-slate-800 rounded-2xl p-4 sm:p-6 shadow-2xl max-h-[90vh] overflow-y-auto">
             <div className="flex items-center justify-between pb-4 border-b border-slate-800">
               <div className="flex items-center gap-3">
                 <div className="p-2 bg-blue-600/20 border border-blue-500/30 rounded-xl text-blue-400">

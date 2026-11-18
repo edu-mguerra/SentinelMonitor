@@ -192,7 +192,7 @@ export default function AlertsPage() {
     <div className="flex-1 flex flex-col min-h-screen">
       <Header title="Configuração de Alertas por E-mail" />
 
-      <main className="flex-1 p-8 space-y-8 max-w-5xl">
+      <main className="flex-1 p-4 sm:p-6 lg:p-8 space-y-6 sm:space-y-8 max-w-5xl">
         <div>
           <h2 className="text-xl font-bold text-white tracking-tight">Notificações e Alertas Críticos</h2>
           <p className="text-xs text-slate-400 mt-0.5">
@@ -211,7 +211,7 @@ export default function AlertsPage() {
             </div>
           </div>
 
-          <form onSubmit={handleAddChannel} className="flex gap-3 mb-5">
+          <form onSubmit={handleAddChannel} className="flex flex-col sm:flex-row gap-3 mb-5">
             <input
               type="email"
               required
@@ -562,7 +562,7 @@ export default function AlertsPage() {
                       )}
                     </div>
 
-                    <div className="flex items-center gap-3">
+                    <div className="flex flex-wrap items-center gap-3">
                       {hasCustom && (
                         <button
                           type="button"
@@ -600,43 +600,69 @@ export default function AlertsPage() {
               Nenhuma notificação foi disparada ainda.
             </div>
           ) : (
-            <div className="overflow-x-auto">
-              <table className="w-full text-left text-xs">
-                <thead>
-                  <tr className="border-b border-slate-800 text-slate-400 uppercase font-semibold">
-                    <th className="py-2.5 px-3">Data/Hora</th>
-                    <th className="py-2.5 px-3">Destinatário</th>
-                    <th className="py-2.5 px-3">Assunto</th>
-                    <th className="py-2.5 px-3 text-right">Status</th>
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-slate-800/60 text-slate-300">
-                  {history.map((h) => (
-                    <tr key={h.id}>
-                      <td className="py-2.5 px-3 font-mono text-slate-400">
-                        {formatDateTimeBR(h.sent_at)}
-                      </td>
-                      <td className="py-2.5 px-3 font-mono text-white">{h.recipient}</td>
-                      <td className="py-2.5 px-3 truncate max-w-xs">{h.subject}</td>
-                      <td className="py-2.5 px-3 text-right">
-                        {h.is_success ? (
-                          <span className="px-2 py-0.5 rounded-full bg-emerald-950 text-emerald-400 border border-emerald-800/40 text-[10px] font-semibold">
-                            ENTREGUE
-                          </span>
-                        ) : (
-                          <span
-                            className="px-2 py-0.5 rounded-full bg-rose-950 text-rose-400 border border-rose-800/40 text-[10px] font-semibold"
-                            title={h.error_message || ''}
-                          >
-                            FALHOU
-                          </span>
-                        )}
-                      </td>
+            <>
+              <div className="md:hidden divide-y divide-slate-800/80">
+                {history.map((h) => (
+                  <div key={h.id} className="py-3.5 space-y-1.5 text-xs">
+                    <div className="flex items-center justify-between gap-2">
+                      <span className="font-mono text-white truncate">{h.recipient}</span>
+                      {h.is_success ? (
+                        <span className="px-2 py-0.5 rounded-full bg-emerald-950 text-emerald-400 border border-emerald-800/40 text-[10px] font-semibold shrink-0">
+                          ENTREGUE
+                        </span>
+                      ) : (
+                        <span
+                          className="px-2 py-0.5 rounded-full bg-rose-950 text-rose-400 border border-rose-800/40 text-[10px] font-semibold shrink-0"
+                          title={h.error_message || ''}
+                        >
+                          FALHOU
+                        </span>
+                      )}
+                    </div>
+                    <p className="text-slate-300 line-clamp-2">{h.subject}</p>
+                    <p className="text-[11px] font-mono text-slate-500">{formatDateTimeBR(h.sent_at)}</p>
+                  </div>
+                ))}
+              </div>
+
+              <div className="hidden md:block overflow-x-auto">
+                <table className="w-full text-left text-xs">
+                  <thead>
+                    <tr className="border-b border-slate-800 text-slate-400 uppercase font-semibold">
+                      <th className="py-2.5 px-3">Data/Hora</th>
+                      <th className="py-2.5 px-3">Destinatário</th>
+                      <th className="py-2.5 px-3">Assunto</th>
+                      <th className="py-2.5 px-3 text-right">Status</th>
                     </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
+                  </thead>
+                  <tbody className="divide-y divide-slate-800/60 text-slate-300">
+                    {history.map((h) => (
+                      <tr key={h.id}>
+                        <td className="py-2.5 px-3 font-mono text-slate-400">
+                          {formatDateTimeBR(h.sent_at)}
+                        </td>
+                        <td className="py-2.5 px-3 font-mono text-white">{h.recipient}</td>
+                        <td className="py-2.5 px-3 truncate max-w-xs">{h.subject}</td>
+                        <td className="py-2.5 px-3 text-right">
+                          {h.is_success ? (
+                            <span className="px-2 py-0.5 rounded-full bg-emerald-950 text-emerald-400 border border-emerald-800/40 text-[10px] font-semibold">
+                              ENTREGUE
+                            </span>
+                          ) : (
+                            <span
+                              className="px-2 py-0.5 rounded-full bg-rose-950 text-rose-400 border border-rose-800/40 text-[10px] font-semibold"
+                              title={h.error_message || ''}
+                            >
+                              FALHOU
+                            </span>
+                          )}
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            </>
           )}
         </div>
       </main>

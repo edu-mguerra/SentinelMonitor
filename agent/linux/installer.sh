@@ -148,7 +148,6 @@ if [ -z "$PERMANENT_TOKEN" ]; then
 fi
 
 cat <<EOF > /etc/sentinel-agent/agent.conf
-# Sentinel Monitor - Configuração Local do Agente
 API_URL="${API_URL}"
 AGENT_TOKEN="${PERMANENT_TOKEN}"
 INTERVAL_SECONDS=30

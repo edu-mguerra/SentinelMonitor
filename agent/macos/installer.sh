@@ -134,7 +134,6 @@ if [ -z "$PERMANENT_TOKEN" ]; then
 fi
 
 cat <<EOF > "${CONF_DIR}/agent.conf"
-# Sentinel Monitor - Configuração Local do Agente (macOS)
 API_URL="${API_URL}"
 AGENT_TOKEN="${PERMANENT_TOKEN}"
 INTERVAL_SECONDS=30

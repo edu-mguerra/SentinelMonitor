@@ -123,7 +123,7 @@ export default function MonitorsPage() {
     <div className="flex-1 flex flex-col min-h-screen">
       <Header title="Monitores Web, APIs & Portas TCP" />
 
-      <main className="flex-1 p-8 space-y-6">
+      <main className="flex-1 p-4 sm:p-6 lg:p-8 space-y-6">
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
           <div>
             <h2 className="text-xl font-bold text-white tracking-tight">Monitores de Disponibilidade</h2>
@@ -164,8 +164,59 @@ export default function MonitorsPage() {
               </button>
             </div>
           ) : (
-            <div className="overflow-x-auto">
-              <table className="w-full text-left border-collapse">
+            <>
+              <div className="md:hidden divide-y divide-slate-800/80">
+                {monitors.map((mon) => (
+                  <div key={mon.id} className="p-4 space-y-3">
+                    <div className="flex items-start justify-between gap-3">
+                      <div className="min-w-0 flex-1">
+                        <div className="font-semibold text-white text-sm flex items-center gap-1.5 truncate">
+                          <span className="truncate">{mon.name}</span>
+                          {mon.type === 'https' && <Lock className="w-3 h-3 text-emerald-400 shrink-0" />}
+                        </div>
+                        <div className="text-xs text-slate-400 font-mono truncate mt-0.5">
+                          {mon.target}
+                          {mon.port && `:${mon.port}`}
+                        </div>
+                      </div>
+                      <StatusBadge status={mon.status} />
+                    </div>
+
+                    <div className="flex flex-wrap items-center justify-between gap-2 text-xs text-slate-400 pt-1">
+                      <div className="flex items-center gap-2.5 flex-wrap">
+                        <span className="px-2 py-0.5 text-[10px] font-mono font-medium rounded uppercase bg-slate-950 text-slate-300 border border-slate-800">
+                          {mon.type}
+                        </span>
+                        <span className="font-mono text-[11px]">{mon.interval_seconds}s</span>
+                        <span className="font-mono text-[11px]">
+                          {mon.last_checked_at ? formatTimeBR(mon.last_checked_at) : 'Nunca'}
+                        </span>
+                      </div>
+
+                      <div className="flex items-center gap-2">
+                        <button
+                          onClick={() => handleManualCheck(mon.id)}
+                          disabled={checkingId === mon.id}
+                          className="inline-flex items-center gap-1 px-2.5 py-1.5 text-xs font-medium text-blue-400 hover:text-white bg-blue-950/40 hover:bg-blue-600 border border-blue-800/40 rounded-lg transition-all disabled:opacity-50"
+                        >
+                          <Play className={`w-3 h-3 ${checkingId === mon.id ? 'animate-spin' : ''}`} />
+                          <span>Testar</span>
+                        </button>
+                        <button
+                          onClick={() => handleDelete(mon.id)}
+                          className="p-1.5 text-slate-500 hover:text-rose-400 hover:bg-slate-800 rounded-lg transition-colors"
+                          title="Excluir monitor"
+                        >
+                          <Trash2 className="w-3.5 h-3.5" />
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+
+              <div className="hidden md:block overflow-x-auto">
+                <table className="w-full text-left border-collapse">
                 <thead>
                   <tr className="border-b border-slate-800 bg-slate-950/40 text-[11px] font-semibold text-slate-400 uppercase tracking-wider">
                     <th className="py-3 px-5">Monitor / Destino</th>
@@ -235,13 +286,14 @@ export default function MonitorsPage() {
                 </tbody>
               </table>
             </div>
+            </>
           )}
         </div>
       </main>
 
       {isModalOpen && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/75 backdrop-blur-sm">
-          <div className="w-full max-w-lg bg-slate-900 border border-slate-800 rounded-2xl p-6 shadow-2xl">
+          <div className="w-full max-w-lg bg-slate-900 border border-slate-800 rounded-2xl p-4 sm:p-6 shadow-2xl max-h-[90vh] overflow-y-auto">
             <div className="flex items-center justify-between pb-3 border-b border-slate-800 mb-4">
               <h3 className="text-base font-semibold text-white">Novo Monitor Externo</h3>
               <button

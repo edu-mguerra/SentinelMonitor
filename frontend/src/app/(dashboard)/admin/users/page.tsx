@@ -134,7 +134,7 @@ export default function AdminUsersPage() {
     <div className="flex-1 flex flex-col min-h-screen">
       <Header title="Gestão de Usuários (Painel Master)" />
 
-      <main className="flex-1 p-8 space-y-6 max-w-6xl">
+      <main className="flex-1 p-4 sm:p-6 lg:p-8 space-y-6 max-w-7xl">
         <div className="p-4 bg-slate-900 border border-slate-800 rounded-2xl flex items-start gap-3.5 shadow-sm">
           <div className="p-2.5 bg-blue-600/20 border border-blue-500/30 rounded-xl text-blue-400 shrink-0 mt-0.5">
             <Lock className="w-5 h-5" />
@@ -176,7 +176,7 @@ export default function AdminUsersPage() {
           </div>
         )}
 
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+        <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4">
           <div className="flex items-center gap-2 flex-wrap">
             <button
               onClick={() => setStatusFilter('all')}
@@ -212,8 +212,8 @@ export default function AdminUsersPage() {
             </button>
           </div>
 
-          <div className="flex items-center gap-3">
-            <div className="relative min-w-[220px]">
+          <div className="flex flex-col sm:flex-row sm:items-center gap-3 w-full lg:w-auto">
+            <div className="relative flex-1 sm:min-w-[220px]">
               <Search className="w-4 h-4 text-slate-500 absolute left-3 top-1/2 -translate-y-1/2" />
               <input
                 type="text"
@@ -226,7 +226,7 @@ export default function AdminUsersPage() {
             <button
               onClick={fetchUsers}
               disabled={loading}
-              className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium text-slate-300 bg-slate-900 hover:bg-slate-800 border border-slate-800 rounded-xl transition-colors"
+              className="flex items-center justify-center gap-1.5 px-3 py-1.5 text-xs font-medium text-slate-300 bg-slate-900 hover:bg-slate-800 border border-slate-800 rounded-xl transition-colors shrink-0"
             >
               <RefreshCw className={`w-3.5 h-3.5 ${loading ? 'animate-spin text-blue-400' : ''}`} />
               Atualizar
@@ -244,17 +244,113 @@ export default function AdminUsersPage() {
               Nenhum usuário encontrado para este filtro.
             </div>
           ) : (
-            <div className="overflow-x-auto">
-              <table className="w-full text-left text-sm">
+            <>
+              <div className="md:hidden divide-y divide-slate-800/80">
+                {filteredUsers.map((u) => {
+                  const isSelf = user?.id === u.id;
+                  const isBusy = actionLoadingId === u.id;
+
+                  return (
+                    <div key={u.id} className="p-4 space-y-3">
+                      <div className="flex items-start justify-between gap-3">
+                        <div className="flex items-center gap-3 min-w-0">
+                          <div
+                            className={`w-9 h-9 rounded-xl flex items-center justify-center shrink-0 ${
+                              u.is_superuser
+                                ? 'bg-amber-500/20 text-amber-400 border border-amber-500/30'
+                                : 'bg-slate-800 text-slate-300 border border-slate-700'
+                            }`}
+                          >
+                            {u.is_superuser ? <Crown className="w-4 h-4" /> : <UserIcon className="w-4 h-4" />}
+                          </div>
+                          <div className="min-w-0">
+                            <span className="font-semibold text-white block text-sm truncate">
+                              {u.full_name || 'Sem nome informado'}
+                            </span>
+                            <span className="text-xs text-slate-400 font-mono block truncate">
+                              {u.email}
+                            </span>
+                          </div>
+                        </div>
+
+                        {u.is_active ? (
+                          <span className="inline-flex items-center gap-1 text-[11px] text-emerald-400 font-medium px-2 py-0.5 rounded-lg bg-emerald-500/10 border border-emerald-500/20 shrink-0">
+                            <CheckCircle2 className="w-3 h-3" /> Ativo
+                          </span>
+                        ) : (
+                          <span className="inline-flex items-center gap-1 text-[11px] text-amber-400 font-semibold px-2 py-0.5 rounded-lg bg-amber-500/10 border border-amber-500/30 shrink-0">
+                            <Clock className="w-3 h-3 animate-pulse" /> Pendente
+                          </span>
+                        )}
+                      </div>
+
+                      <div className="flex flex-wrap items-center justify-between gap-2 text-xs text-slate-400 pt-1">
+                        <div className="flex items-center gap-3 flex-wrap">
+                          <span className="inline-flex items-center gap-1 font-mono text-white bg-slate-950 px-2 py-0.5 rounded-md border border-slate-800">
+                            <ServerIcon className="w-3 h-3 text-blue-400" />
+                            {u.servers_count ?? 0} VPS
+                          </span>
+                          <span className="text-[11px]">
+                            {u.is_superuser ? 'Master' : 'Cliente'}
+                          </span>
+                          <span className="text-[11px] flex items-center gap-1">
+                            <Calendar className="w-3 h-3" /> {formatDateBR(u.created_at)}
+                          </span>
+                        </div>
+
+                        <div className="flex items-center gap-2">
+                          {!u.is_active && (
+                            <button
+                              onClick={() => handleApprove(u.id)}
+                              disabled={isBusy}
+                              className="px-3 py-1.5 bg-emerald-600 hover:bg-emerald-500 text-white rounded-lg text-xs font-semibold flex items-center gap-1.5 transition-all shadow-sm disabled:opacity-50"
+                            >
+                              <CheckCircle2 className={`w-3.5 h-3.5 ${isBusy ? 'animate-spin' : ''}`} />
+                              Aprovar
+                            </button>
+                          )}
+
+                          {!isSelf && (
+                            <>
+                              <button
+                                onClick={() => handleToggleActive(u.id)}
+                                disabled={isBusy}
+                                className="p-1.5 rounded-lg border bg-slate-800 hover:bg-slate-700 border-slate-700 text-slate-300 transition-colors disabled:opacity-50"
+                                title={u.is_active ? 'Desativar usuário' : 'Ativar usuário'}
+                              >
+                                {u.is_active ? <UserX className="w-4 h-4" /> : <UserCheck className="w-4 h-4" />}
+                              </button>
+
+                              {!u.is_superuser && (
+                                <button
+                                  onClick={() => handleDelete(u.id, u.email)}
+                                  disabled={isBusy}
+                                  className="p-1.5 rounded-lg bg-slate-800 hover:bg-rose-950/60 border border-slate-700 hover:border-rose-800/80 text-slate-400 hover:text-rose-300 transition-colors disabled:opacity-50"
+                                  title="Excluir usuário"
+                                >
+                                  <Trash2 className="w-4 h-4" />
+                                </button>
+                              )}
+                            </>
+                          )}
+                        </div>
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+
+              <div className="hidden md:block overflow-x-auto">
+                <table className="w-full text-left text-sm">
                 <thead>
                   <tr className="bg-slate-950/60 border-b border-slate-800 text-[11px] font-semibold text-slate-400 uppercase tracking-wider">
-                    <th className="px-6 py-3.5">Usuário / Nome</th>
-                    <th className="px-6 py-3.5">E-mail</th>
-                    <th className="px-6 py-3.5">Tipo de Conta</th>
-                    <th className="px-6 py-3.5">VPSs / Servidores</th>
-                    <th className="px-6 py-3.5">Data de Cadastro</th>
-                    <th className="px-6 py-3.5">Status</th>
-                    <th className="px-6 py-3.5 text-right">Ações</th>
+                    <th className="px-4 xl:px-5 py-3.5">Usuário / Nome</th>
+                    <th className="px-4 xl:px-5 py-3.5">E-mail</th>
+                    <th className="px-4 xl:px-5 py-3.5">Tipo</th>
+                    <th className="px-4 xl:px-5 py-3.5">VPSs</th>
+                    <th className="px-4 xl:px-5 py-3.5">Cadastro</th>
+                    <th className="px-4 xl:px-5 py-3.5">Status</th>
+                    <th className="px-4 xl:px-5 py-3.5 text-right">Ações</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-slate-800/80">
@@ -264,7 +360,7 @@ export default function AdminUsersPage() {
 
                     return (
                       <tr key={u.id} className="hover:bg-slate-800/40 transition-colors">
-                        <td className="px-6 py-4">
+                        <td className="px-4 xl:px-5 py-4">
                           <div className="flex items-center gap-3">
                             <div
                               className={`w-9 h-9 rounded-xl flex items-center justify-center shrink-0 ${
@@ -285,24 +381,24 @@ export default function AdminUsersPage() {
                             </div>
                           </div>
                         </td>
-                        <td className="px-6 py-4">
+                        <td className="px-4 xl:px-5 py-4">
                           <div className="flex items-center gap-2 text-slate-300 font-mono text-xs">
-                            <Mail className="w-3.5 h-3.5 text-slate-500" />
-                            <span>{u.email}</span>
+                            <Mail className="w-3.5 h-3.5 text-slate-500 shrink-0" />
+                            <span className="truncate max-w-[200px] xl:max-w-none">{u.email}</span>
                           </div>
                         </td>
-                        <td className="px-6 py-4">
+                        <td className="px-4 xl:px-5 py-4">
                           {u.is_superuser ? (
                             <span className="inline-flex items-center gap-1 px-2.5 py-1 text-[11px] font-bold uppercase tracking-wider bg-amber-500/15 text-amber-300 border border-amber-500/30 rounded-lg">
                               <Crown className="w-3 h-3" /> Master
                             </span>
                           ) : (
                             <span className="inline-flex items-center gap-1 px-2.5 py-1 text-[11px] font-medium bg-slate-800 text-slate-300 border border-slate-700 rounded-lg">
-                              Usuário Cliente
+                              Cliente
                             </span>
                           )}
                         </td>
-                        <td className="px-6 py-4">
+                        <td className="px-4 xl:px-5 py-4">
                           <div className="flex items-center gap-1.5">
                             <ServerIcon className="w-3.5 h-3.5 text-blue-400" />
                             <span className="font-mono text-xs font-bold text-white">
@@ -311,24 +407,24 @@ export default function AdminUsersPage() {
                             <span className="text-[11px] text-slate-500">VPS</span>
                           </div>
                         </td>
-                        <td className="px-6 py-4 text-xs text-slate-400">
+                        <td className="px-4 xl:px-5 py-4 text-xs text-slate-400 whitespace-nowrap">
                           <div className="flex items-center gap-1.5">
                             <Calendar className="w-3.5 h-3.5 text-slate-500" />
                             <span>{formatDateBR(u.created_at)}</span>
                           </div>
                         </td>
-                        <td className="px-6 py-4">
+                        <td className="px-4 xl:px-5 py-4">
                           {u.is_active ? (
                             <span className="inline-flex items-center gap-1 text-xs text-emerald-400 font-medium px-2.5 py-1 rounded-lg bg-emerald-500/10 border border-emerald-500/20">
                               <CheckCircle2 className="w-3.5 h-3.5" /> Ativo
                             </span>
                           ) : (
                             <span className="inline-flex items-center gap-1 text-xs text-amber-400 font-semibold px-2.5 py-1 rounded-lg bg-amber-500/10 border border-amber-500/30">
-                              <Clock className="w-3.5 h-3.5 animate-pulse" /> Aguardando Aprovação
+                              <Clock className="w-3.5 h-3.5 animate-pulse" /> Aguardando
                             </span>
                           )}
                         </td>
-                        <td className="px-6 py-4 text-right">
+                        <td className="px-4 xl:px-5 py-4 text-right">
                           <div className="flex items-center justify-end gap-2">
                             {!u.is_active && (
                               <button
@@ -377,6 +473,7 @@ export default function AdminUsersPage() {
                 </tbody>
               </table>
             </div>
+            </>
           )}
         </div>
       </main>
