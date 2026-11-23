@@ -394,6 +394,8 @@ async def get_shared_server_detail(
     metrics_res = await db.execute(metrics_query)
     metrics = metrics_res.scalars().all()
 
-    resp = ServerDetailResponse.model_validate(share.server)
-    resp.metrics = [ServerMetricResponse.model_validate(m) for m in metrics]
-    return resp
+    base_data = ServerResponse.model_validate(share.server).model_dump()
+    return ServerDetailResponse(
+        **base_data,
+        metrics=[ServerMetricResponse.model_validate(m) for m in metrics]
+    )

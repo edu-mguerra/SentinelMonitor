@@ -52,14 +52,16 @@ class Monitor(BaseModel):
         "MonitorCheck",
         back_populates="monitor",
         cascade="all, delete-orphan",
+        passive_deletes=True,
         order_by="desc(MonitorCheck.created_at)",
-        lazy="selectin"
+        lazy="noload"
     )
     incidents = relationship(
         "Incident",
         back_populates="monitor",
         cascade="all, delete-orphan",
-        lazy="selectin"
+        passive_deletes=True,
+        lazy="noload"
     )
 
     def __repr__(self):
@@ -83,7 +85,7 @@ class MonitorCheck(BaseModel):
     ssl_expiration_date = Column(DateTime(timezone=True), nullable=True)
     ssl_issuer = Column(String(255), nullable=True)
 
-    monitor = relationship("Monitor", back_populates="checks", lazy="selectin")
+    monitor = relationship("Monitor", back_populates="checks", lazy="select")
 
     def __repr__(self):
         return f"<MonitorCheck monitor={self.monitor_id} success={self.is_success} time={self.response_time_ms}ms>"

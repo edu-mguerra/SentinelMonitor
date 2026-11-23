@@ -66,14 +66,16 @@ class Server(BaseModel):
         "AgentInstallToken",
         back_populates="server",
         cascade="all, delete-orphan",
-        lazy="selectin"
+        passive_deletes=True,
+        lazy="noload"
     )
     metrics = relationship(
         "ServerMetric",
         back_populates="server",
         cascade="all, delete-orphan",
+        passive_deletes=True,
         order_by="desc(ServerMetric.recorded_at)",
-        lazy="selectin"
+        lazy="noload"
     )
     shares = relationship(
         "ServerShare",
@@ -103,7 +105,7 @@ class AgentInstallToken(BaseModel):
     is_used = Column(Boolean, default=False, nullable=False)
     used_at = Column(DateTime(timezone=True), nullable=True)
 
-    server = relationship("Server", back_populates="install_tokens", lazy="selectin")
+    server = relationship("Server", back_populates="install_tokens", lazy="select")
 
     def __repr__(self):
         return f"<AgentInstallToken token={self.token[:8]}... used={self.is_used}>"
@@ -146,7 +148,7 @@ class ServerMetric(BaseModel):
 
     extra_data = Column(JSON, nullable=True)
 
-    server = relationship("Server", back_populates="metrics", lazy="selectin")
+    server = relationship("Server", back_populates="metrics", lazy="select")
 
     def __repr__(self):
         return f"<ServerMetric server={self.server_id} cpu={self.cpu_percent}% ram={self.ram_percent}% time={self.recorded_at}>"

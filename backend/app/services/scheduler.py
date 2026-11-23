@@ -1,9 +1,10 @@
 import asyncio
 import logging
 from datetime import datetime, timezone, timedelta
-from sqlalchemy import select, and_, or_
+from sqlalchemy import select, and_, or_, delete
 from app.database.session import AsyncSessionLocal
-from app.models.monitor import Monitor, MonitorStatus
+from app.models.monitor import Monitor, MonitorStatus, MonitorCheck
+from app.models.server import ServerMetric
 from app.services.checker import execute_monitor_check
 from app.services.alert_dispatcher import check_servers_offline_job
 
@@ -26,14 +27,33 @@ async def _run_single_check(monitor_id):
             except Exception as e:
                 logger.error(f"Erro ao verificar monitor {monitor_id}: {str(e)}", exc_info=True)
 
+async def _cleanup_old_telemetry(session) -> None:
+    cutoff = datetime.now(timezone.utc) - timedelta(days=7)
+    try:
+        await session.execute(
+            delete(ServerMetric).where(ServerMetric.recorded_at < cutoff)
+        )
+        await session.execute(
+            delete(MonitorCheck).where(MonitorCheck.created_at < cutoff)
+        )
+        await session.commit()
+    except Exception as e:
+        await session.rollback()
+        logger.warning(f"Erro ao limpar telemetria antiga: {str(e)}")
+
 async def monitor_scheduler_loop():
     """Loop contínuo em background para disparar verificações programadas."""
     logger.info("Iniciando loop do agendador de monitoramento externo...")
+    last_cleanup_at = datetime.now(timezone.utc) - timedelta(hours=1)
     while True:
         try:
             now = datetime.now(timezone.utc)
 
             async with AsyncSessionLocal() as session:
+                if (now - last_cleanup_at) >= timedelta(hours=1):
+                    await _cleanup_old_telemetry(session)
+                    last_cleanup_at = now
+
                 await check_servers_offline_job(session)
 
                 query = select(Monitor).where(

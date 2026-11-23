@@ -43,6 +43,7 @@ export default function ServersPage() {
   const [sharedServers, setSharedServers] = useState<SharedServerItem[]>([]);
   const [pendingInvites, setPendingInvites] = useState<ShareInviteItem[]>([]);
   const [loading, setLoading] = useState(true);
+  const [loadError, setLoadError] = useState<string | null>(null);
 
   const [activeTab, setActiveTab] = useState<'my_servers' | 'shared_servers'>('my_servers');
 
@@ -68,11 +69,13 @@ export default function ServersPage() {
         serversService.listPendingInvites().catch(() => []),
       ]);
       setServers(data);
+      setLoadError(null);
       if (release) setAgentRelease(release);
       setSharedServers(sharedData);
       setPendingInvites(invitesData);
-    } catch (err) {
+    } catch (err: any) {
       console.error('Erro ao carregar servidores:', err);
+      setLoadError(err?.message || 'Não foi possível carregar os servidores no momento.');
     } finally {
       if (!silent) setLoading(false);
     }
@@ -214,6 +217,21 @@ export default function ServersPage() {
                 </div>
               ))}
             </div>
+          </div>
+        )}
+
+        {loadError && (
+          <div className="p-3.5 rounded-xl border bg-rose-950/60 border-rose-800/80 text-rose-300 flex items-center justify-between text-xs gap-3">
+            <div className="flex items-center gap-2">
+              <AlertCircle className="w-4 h-4 text-rose-400 shrink-0" />
+              <span>{loadError}</span>
+            </div>
+            <button
+              onClick={() => fetchServers()}
+              className="px-3 py-1 bg-rose-900/60 hover:bg-rose-800/70 rounded-lg text-white font-medium shrink-0"
+            >
+              Tentar novamente
+            </button>
           </div>
         )}
 

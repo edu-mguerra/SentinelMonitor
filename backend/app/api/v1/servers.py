@@ -144,9 +144,11 @@ async def get_server(
     metrics_res = await db.execute(metrics_query)
     metrics = metrics_res.scalars().all()
 
-    resp = ServerDetailResponse.model_validate(server)
-    resp.metrics = [ServerMetricResponse.model_validate(m) for m in metrics]
-    return resp
+    base_data = ServerResponse.model_validate(server).model_dump()
+    return ServerDetailResponse(
+        **base_data,
+        metrics=[ServerMetricResponse.model_validate(m) for m in metrics]
+    )
 
 @router.patch("/{server_id}", response_model=ServerResponse)
 async def update_server(

@@ -127,9 +127,11 @@ async def get_monitor(
     checks_res = await db.execute(checks_query)
     checks = checks_res.scalars().all()
 
-    resp = MonitorDetailResponse.model_validate(monitor)
-    resp.checks = [MonitorCheckResponse.model_validate(c) for c in checks]
-    return resp
+    base_data = MonitorResponse.model_validate(monitor).model_dump()
+    return MonitorDetailResponse(
+        **base_data,
+        checks=[MonitorCheckResponse.model_validate(c) for c in checks]
+    )
 
 @router.patch("/{monitor_id}", response_model=MonitorResponse)
 async def update_monitor(
