@@ -1,7 +1,7 @@
 import uuid
 from datetime import datetime, timezone, timedelta
-from typing import List
-from fastapi import APIRouter, Depends, HTTPException, status, Request
+from typing import List, Optional
+from fastapi import APIRouter, Depends, HTTPException, status, Request, Query
 from sqlalchemy import select, and_
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -15,7 +15,9 @@ from app.schemas.server import (
     ServerWithInstallCommandResponse,
     ServerDetailResponse,
     ServerMetricResponse,
+    ServerReportResponse,
 )
+from app.services.report_service import build_server_report, parse_report_date_range
 from app.core.security import generate_temp_install_token
 from app.core.config import settings
 
@@ -278,3 +280,34 @@ async def regenerate_install_token(
         install_command=install_cmds["linux"],
         install_commands=install_cmds
     )
+
+@router.get("/{server_id}/report", response_model=ServerReportResponse)
+async def get_server_report(
+    organization_id: uuid.UUID,
+    server_id: uuid.UUID,
+    days: int = Query(30, ge=1, le=365),
+    start_date: Optional[str] = Query(None),
+    end_date: Optional[str] = Query(None),
+    db: AsyncSession = Depends(get_db),
+    membership: OrganizationMember = Depends(TenantContext(required_roles=[MemberRole.VIEWER]))
+):
+    server = (
+        await db.execute(
+            select(Server).where(
+                and_(
+                    Server.id == server_id,
+                    Server.organization_id == organization_id
+                )
+            )
+        )
+    ).scalars().first()
+
+    if not server:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Servidor não encontrado.")
+
+    try:
+        start_dt, end_dt = parse_report_date_range(days=days, start_date=start_date, end_date=end_date)
+    except ValueError as e:
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(e))
+
+    return await build_server_report(db, server, start_dt, end_dt)

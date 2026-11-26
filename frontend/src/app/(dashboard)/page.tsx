@@ -42,7 +42,7 @@ export default function DashboardPage() {
 
   useEffect(() => {
     fetchData();
-    const interval = setInterval(fetchData, 15000); 
+    const interval = setInterval(fetchData, 10000);
     return () => clearInterval(interval);
   }, [currentOrganization]);
 
@@ -98,7 +98,7 @@ export default function DashboardPage() {
           />
           <MetricCard
             title="Telemetria"
-            value="30s"
+            value="10s"
             subtitle="Intervalo padrão de coleta"
             icon={Activity}
           />

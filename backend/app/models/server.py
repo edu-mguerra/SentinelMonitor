@@ -1,7 +1,7 @@
 import uuid
 import enum
 from datetime import datetime, timezone
-from sqlalchemy import Column, String, Integer, BigInteger, Float, Boolean, DateTime, Enum, ForeignKey, Text, JSON, Uuid as UUID
+from sqlalchemy import Column, String, Integer, BigInteger, Float, Boolean, DateTime, Enum, ForeignKey, Text, JSON, UniqueConstraint, Uuid as UUID
 from sqlalchemy.orm import relationship
 from app.models.base import BaseModel
 
@@ -192,3 +192,41 @@ class ServerShare(BaseModel):
 
     def __repr__(self):
         return f"<ServerShare server={self.server_id} to={self.shared_with_email} status={self.status}>"
+
+class ServerMetricHourly(BaseModel):
+    __tablename__ = "server_metric_rollups"
+    __table_args__ = (
+        UniqueConstraint("server_id", "hour_bucket", name="uq_server_hour_bucket"),
+    )
+
+    server_id = Column(
+        UUID(as_uuid=True),
+        ForeignKey("servers.id", ondelete="CASCADE"),
+        nullable=False,
+        index=True
+    )
+    hour_bucket = Column(DateTime(timezone=True), nullable=False, index=True)
+    samples_count = Column(Integer, nullable=False, default=0)
+
+    cpu_avg = Column(Float, nullable=False, default=0.0)
+    cpu_min = Column(Float, nullable=False, default=0.0)
+    cpu_max = Column(Float, nullable=False, default=0.0)
+    cpu_peak_at = Column(DateTime(timezone=True), nullable=True)
+
+    ram_avg = Column(Float, nullable=False, default=0.0)
+    ram_min = Column(Float, nullable=False, default=0.0)
+    ram_max = Column(Float, nullable=False, default=0.0)
+    ram_peak_at = Column(DateTime(timezone=True), nullable=True)
+
+    disk_avg = Column(Float, nullable=True)
+    disk_max = Column(Float, nullable=True)
+
+    net_recv_kbps_avg = Column(Float, nullable=True)
+    net_recv_kbps_max = Column(Float, nullable=True)
+    net_sent_kbps_avg = Column(Float, nullable=True)
+    net_sent_kbps_max = Column(Float, nullable=True)
+
+    server = relationship("Server", lazy="select")
+
+    def __repr__(self):
+        return f"<ServerMetricHourly server={self.server_id} hour={self.hour_bucket} samples={self.samples_count}>"

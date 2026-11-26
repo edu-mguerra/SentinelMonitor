@@ -12,6 +12,8 @@ AGENT_VERSION = "1.1.0"
 
 _prev_disk_io: Optional[Any] = None
 _prev_disk_time: Optional[float] = None
+_cpu_warmed_up: bool = False
+_procs_warmed_up: bool = False
 
 def get_os_info() -> Dict[str, str]:
     """Detecta informações do sistema operacional de forma nativa em Linux, macOS e Windows."""
@@ -66,8 +68,13 @@ def get_uptime_seconds() -> int:
 
 def get_cpu_metrics() -> Dict[str, Any]:
     """Coleta percentual de uso, contagem de núcleos e carga média."""
+    global _cpu_warmed_up
     try:
-        usage_percent = psutil.cpu_percent(interval=0.5)
+        if not _cpu_warmed_up:
+            usage_percent = psutil.cpu_percent(interval=0.5)
+            _cpu_warmed_up = True
+        else:
+            usage_percent = psutil.cpu_percent(interval=None)
         cores_count = psutil.cpu_count(logical=True)
         load_average = list(os.getloadavg()) if hasattr(os, "getloadavg") else [0.0, 0.0, 0.0]
         return {
@@ -203,9 +210,16 @@ def check_services(services_to_track: List[str]) -> List[Dict[str, Any]]:
 
 def get_top_processes(limit: int = 8) -> List[Dict[str, Any]]:
     """Lista os processos que mais consomem RAM e CPU no momento."""
+    global _procs_warmed_up
     procs = []
     cores = psutil.cpu_count(logical=True) or 1
     try:
+        if not _procs_warmed_up:
+            for _ in psutil.process_iter(['cpu_percent']):
+                pass
+            time.sleep(0.2)
+            _procs_warmed_up = True
+
         for proc in psutil.process_iter(['pid', 'name', 'memory_percent', 'memory_info', 'cpu_percent']):
             try:
                 pid = proc.info['pid']
@@ -225,7 +239,10 @@ def get_top_processes(limit: int = 8) -> List[Dict[str, Any]]:
                 })
             except (psutil.NoSuchProcess, psutil.AccessDenied, psutil.ZombieProcess):
                 continue
-        procs.sort(key=lambda p: (p["memory_percent"], p["cpu_percent"]), reverse=True)
+        procs.sort(
+            key=lambda p: (max(p["cpu_percent"], p["memory_percent"]), p["cpu_percent"], p["memory_percent"]),
+            reverse=True,
+        )
         return procs[:limit]
     except Exception:
         return []

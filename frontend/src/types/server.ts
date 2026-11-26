@@ -187,3 +187,64 @@ export interface UserSearchResult {
   email: string;
   full_name?: string | null;
 }
+
+export interface ServerReportSummary {
+  total_samples: number;
+  uptime_percent: number;
+  total_downtime_minutes: number;
+  incidents_count: number;
+  cpu_avg: number;
+  cpu_min: number;
+  cpu_max: number;
+  cpu_peak_at?: string | null;
+  ram_avg: number;
+  ram_min: number;
+  ram_max: number;
+  ram_peak_at?: string | null;
+  disk_avg?: number | null;
+  disk_max?: number | null;
+  disk_current?: number | null;
+  net_recv_kbps_avg?: number | null;
+  net_recv_kbps_max?: number | null;
+  net_sent_kbps_avg?: number | null;
+  net_sent_kbps_max?: number | null;
+}
+
+export interface ServerReportPoint {
+  timestamp: string;
+  samples_count: number;
+  cpu_avg: number;
+  cpu_min: number;
+  cpu_max: number;
+  ram_avg: number;
+  ram_min: number;
+  ram_max: number;
+  disk_avg?: number | null;
+  disk_max?: number | null;
+  net_recv_kbps_avg?: number | null;
+  net_sent_kbps_avg?: number | null;
+}
+
+export interface ServerReportIncident {
+  id: string;
+  title: string;
+  severity: string;
+  status: string;
+  started_at: string;
+  resolved_at?: string | null;
+  duration_minutes?: number | null;
+}
+
+export interface ServerReport {
+  server_id: string;
+  server_name: string;
+  hostname?: string | null;
+  os_name?: string | null;
+  os_version?: string | null;
+  period_start: string;
+  period_end: string;
+  period_days: number;
+  summary: ServerReportSummary;
+  series: ServerReportPoint[];
+  incidents: ServerReportIncident[];
+}

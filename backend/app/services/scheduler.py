@@ -4,9 +4,10 @@ from datetime import datetime, timezone, timedelta
 from sqlalchemy import select, and_, or_, delete
 from app.database.session import AsyncSessionLocal
 from app.models.monitor import Monitor, MonitorStatus, MonitorCheck
-from app.models.server import ServerMetric
+from app.models.server import ServerMetric, ServerMetricHourly
 from app.services.checker import execute_monitor_check
 from app.services.alert_dispatcher import check_servers_offline_job
+from app.services.report_service import aggregate_server_metrics_hourly
 
 logger = logging.getLogger("sentinel.scheduler")
 
@@ -29,12 +30,16 @@ async def _run_single_check(monitor_id):
 
 async def _cleanup_old_telemetry(session) -> None:
     cutoff = datetime.now(timezone.utc) - timedelta(days=7)
+    rollup_cutoff = datetime.now(timezone.utc) - timedelta(days=365)
     try:
         await session.execute(
             delete(ServerMetric).where(ServerMetric.recorded_at < cutoff)
         )
         await session.execute(
             delete(MonitorCheck).where(MonitorCheck.created_at < cutoff)
+        )
+        await session.execute(
+            delete(ServerMetricHourly).where(ServerMetricHourly.hour_bucket < rollup_cutoff)
         )
         await session.commit()
     except Exception as e:
@@ -45,11 +50,19 @@ async def monitor_scheduler_loop():
     """Loop contínuo em background para disparar verificações programadas."""
     logger.info("Iniciando loop do agendador de monitoramento externo...")
     last_cleanup_at = datetime.now(timezone.utc) - timedelta(hours=1)
+    last_rollup_at = None
     while True:
         try:
             now = datetime.now(timezone.utc)
 
             async with AsyncSessionLocal() as session:
+                if last_rollup_at is None:
+                    await aggregate_server_metrics_hourly(session, full_backfill=True)
+                    last_rollup_at = now
+                elif (now - last_rollup_at) >= timedelta(minutes=15):
+                    await aggregate_server_metrics_hourly(session, full_backfill=False)
+                    last_rollup_at = now
+
                 if (now - last_cleanup_at) >= timedelta(hours=1):
                     await _cleanup_old_telemetry(session)
                     last_cleanup_at = now

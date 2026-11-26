@@ -136,7 +136,7 @@ fi
 cat <<EOF > "${CONF_DIR}/agent.conf"
 API_URL="${API_URL}"
 AGENT_TOKEN="${PERMANENT_TOKEN}"
-INTERVAL_SECONDS=30
+INTERVAL_SECONDS=10
 SERVICES="nginx,docker,postgres,mysqld,node"
 EOF
 

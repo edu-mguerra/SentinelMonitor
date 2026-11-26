@@ -70,7 +70,7 @@ def load_config() -> Dict[str, Any]:
     config = {
         "api_url": os.environ.get("SENTINEL_API_URL", "http://localhost:10203/api/v1"),
         "agent_token": os.environ.get("SENTINEL_AGENT_TOKEN", ""),
-        "interval_seconds": int(os.environ.get("SENTINEL_INTERVAL", "30")),
+        "interval_seconds": int(os.environ.get("SENTINEL_INTERVAL", "10")),
         "services": [s.strip() for s in os.environ.get("SENTINEL_SERVICES", "nginx,docker,postgres,mysqld,apache2").split(",") if s.strip()]
     }
 
@@ -189,17 +189,24 @@ def main():
                         if set(server_services) != set(config["services"]):
                             logger.info(f"Lista de serviços atualizada dinamicamente pelo painel: {server_services}")
                             config["services"] = server_services
+                    server_interval = last_response_data["config"].get("interval_seconds")
+                    if isinstance(server_interval, int) and server_interval >= 5:
+                        if server_interval != config["interval_seconds"]:
+                            logger.info(f"Intervalo de coleta atualizado dinamicamente pelo painel: {server_interval}s")
+                            config["interval_seconds"] = server_interval
 
         except Exception as e:
             logger.error(f"Erro inesperado no loop do agente: {e}", exc_info=True)
 
         elapsed = time.time() - start_loop
-        sleep_time = max(1, config["interval_seconds"] - elapsed)
+        sleep_time = max(1.0, config["interval_seconds"] - elapsed)
 
-        for _ in range(int(sleep_time)):
-            if not running:
+        end_sleep = time.time() + sleep_time
+        while running:
+            rem = end_sleep - time.time()
+            if rem <= 0:
                 break
-            time.sleep(1)
+            time.sleep(min(1.0, rem))
 
     logger.info("Sentinel Agent finalizado.")
 

@@ -37,9 +37,9 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
 
   return (
     <MobileMenuProvider>
-      <div className="flex h-screen overflow-hidden bg-slate-950 relative">
+      <div className="flex h-screen overflow-hidden bg-slate-950 relative print:h-auto print:overflow-visible print:bg-white">
         <Sidebar />
-        <div className="flex-1 flex flex-col min-w-0 overflow-y-auto">
+        <div className="flex-1 flex flex-col min-w-0 overflow-y-auto print:overflow-visible">
           {children}
         </div>
       </div>

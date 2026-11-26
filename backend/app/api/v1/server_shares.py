@@ -18,7 +18,9 @@ from app.schemas.server import (
     ServerDetailResponse,
     ServerMetricResponse,
     ServerResponse,
+    ServerReportResponse,
 )
+from app.services.report_service import build_server_report, parse_report_date_range
 
 router = APIRouter(tags=["VPS Amiga (Compartilhamento)"])
 
@@ -399,3 +401,37 @@ async def get_shared_server_detail(
         **base_data,
         metrics=[ServerMetricResponse.model_validate(m) for m in metrics]
     )
+
+@router.get("/shared-servers/{server_id}/report", response_model=ServerReportResponse)
+async def get_shared_server_report(
+    server_id: uuid.UUID,
+    days: int = Query(30, ge=1, le=365),
+    start_date: Optional[str] = Query(None),
+    end_date: Optional[str] = Query(None),
+    db: AsyncSession = Depends(get_db),
+    current_user: User = Depends(get_current_user)
+):
+    share = (
+        await db.execute(
+            select(ServerShare).where(
+                and_(
+                    ServerShare.server_id == server_id,
+                    or_(
+                        ServerShare.shared_with_email == current_user.email.lower().strip(),
+                        ServerShare.shared_with_user_id == current_user.id
+                    ),
+                    ServerShare.status == ShareStatus.ACCEPTED
+                )
+            )
+        )
+    ).scalars().first()
+
+    if not share or not share.server:
+        raise HTTPException(status_code=403, detail="Você não possui permissão para visualizar esta VPS.")
+
+    try:
+        start_dt, end_dt = parse_report_date_range(days=days, start_date=start_date, end_date=end_date)
+    except ValueError as e:
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(e))
+
+    return await build_server_report(db, share.server, start_dt, end_dt)

@@ -117,3 +117,60 @@ class UserSearchResult(BaseModel):
     full_name: Optional[str] = None
 
     model_config = ConfigDict(from_attributes=True)
+
+class ServerReportSummary(BaseModel):
+    total_samples: int
+    uptime_percent: float
+    total_downtime_minutes: float
+    incidents_count: int
+    cpu_avg: float
+    cpu_min: float
+    cpu_max: float
+    cpu_peak_at: Optional[datetime] = None
+    ram_avg: float
+    ram_min: float
+    ram_max: float
+    ram_peak_at: Optional[datetime] = None
+    disk_avg: Optional[float] = None
+    disk_max: Optional[float] = None
+    disk_current: Optional[float] = None
+    net_recv_kbps_avg: Optional[float] = None
+    net_recv_kbps_max: Optional[float] = None
+    net_sent_kbps_avg: Optional[float] = None
+    net_sent_kbps_max: Optional[float] = None
+
+class ServerReportPoint(BaseModel):
+    timestamp: datetime
+    samples_count: int
+    cpu_avg: float
+    cpu_min: float
+    cpu_max: float
+    ram_avg: float
+    ram_min: float
+    ram_max: float
+    disk_avg: Optional[float] = None
+    disk_max: Optional[float] = None
+    net_recv_kbps_avg: Optional[float] = None
+    net_sent_kbps_avg: Optional[float] = None
+
+class ServerReportIncident(BaseModel):
+    id: uuid.UUID
+    title: str
+    severity: str
+    status: str
+    started_at: datetime
+    resolved_at: Optional[datetime] = None
+    duration_minutes: Optional[float] = None
+
+class ServerReportResponse(BaseModel):
+    server_id: uuid.UUID
+    server_name: str
+    hostname: Optional[str] = None
+    os_name: Optional[str] = None
+    os_version: Optional[str] = None
+    period_start: datetime
+    period_end: datetime
+    period_days: int
+    summary: ServerReportSummary
+    series: List[ServerReportPoint] = []
+    incidents: List[ServerReportIncident] = []

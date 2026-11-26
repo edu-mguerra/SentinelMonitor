@@ -16,7 +16,7 @@ class AgentHandshakeResponse(BaseModel):
     agent_token: str = Field(..., description="Token permanente exclusivo deste agente")
     server_id: uuid.UUID
     server_name: str
-    collection_interval_seconds: int = 30
+    collection_interval_seconds: int = 10
     monitored_services: Optional[List[str]] = None
 
 class CpuMetrics(BaseModel):

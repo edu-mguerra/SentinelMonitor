@@ -152,7 +152,7 @@
     $ConfContent = @"
 API_URL="$ApiUrl"
 AGENT_TOKEN="$PermanentToken"
-INTERVAL_SECONDS=30
+INTERVAL_SECONDS=10
 SERVICES="nginx,docker,postgres,mysqld,node"
 "@
     [System.IO.File]::WriteAllText($ConfPath, $ConfContent, (New-Object System.Text.UTF8Encoding $false))

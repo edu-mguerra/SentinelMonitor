@@ -24,17 +24,17 @@ const OS_STEPS: Record<OsKey, string[]> = {
   windows: [
     'Na máquina Windows, abra o PowerShell como Administrador (botão direito → Executar como administrador).',
     'Cole e execute o comando abaixo (ele atualiza os scripts e reinicia a tarefa SentinelMonitorAgent sem apagar sua configuração).',
-    'Aguarde até 30 segundos: o painel reconhecerá automaticamente a nova versão e o aviso de atualização irá sumir.',
+    'Aguarde até 10 segundos: o painel reconhecerá automaticamente a nova versão e o aviso de atualização irá sumir.',
   ],
   linux: [
     'Acesse o terminal da sua VPS via SSH.',
     'Cole e execute o comando abaixo (ele baixa os scripts novos e reinicia o serviço systemd sem perder seu token).',
-    'Em até 30 segundos o painel atualizará automaticamente a versão exibida.',
+    'Em até 10 segundos o painel atualizará automaticamente a versão exibida.',
   ],
   macos: [
     'Abra o aplicativo Terminal no Mac.',
     'Cole e execute o comando abaixo (ele atualiza os scripts e reinicia o daemon no launchd sem alterar permissões de usuário).',
-    'Em até 30 segundos o painel reconhecerá a nova versão automaticamente.',
+    'Em até 10 segundos o painel reconhecerá a nova versão automaticamente.',
   ],
 };
 

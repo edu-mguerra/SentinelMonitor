@@ -8,6 +8,7 @@ import { OsBadge } from '@/components/ui/OsBadge';
 import { UpdateAgentModal } from '@/components/ui/UpdateAgentModal';
 import { CpuMemoryChart } from '@/components/charts/CpuMemoryChart';
 import { NetworkChart } from '@/components/charts/NetworkChart';
+import { ServerReportTab } from '@/components/servers/ServerReportTab';
 import {
   Server as ServerIcon,
   ArrowLeft,
@@ -40,6 +41,7 @@ import {
   StopCircle,
   Terminal,
   Zap,
+  FileText,
 } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
 import { formatTimeBR } from '@/lib/date';
@@ -80,7 +82,7 @@ const PRESET_SERVICES = [
   'mysqld',
 ];
 
-type ServerTab = 'overview' | 'containers' | 'services';
+type ServerTab = 'overview' | 'containers' | 'services' | 'reports';
 
 export default function ServerDetailPage({ params }: { params: Promise<{ id: string }> }) {
   const resolvedParams = use(params);
@@ -271,9 +273,9 @@ export default function ServerDetailPage({ params }: { params: Promise<{ id: str
     <div className="flex-1 flex flex-col min-h-screen">
       <Header title={`Telemetria: ${server.name}`} />
 
-      <main className="flex-1 p-4 sm:p-6 lg:p-8 space-y-6 sm:space-y-8">
+      <main className="flex-1 p-4 sm:p-6 lg:p-8 space-y-6 sm:space-y-8 print:p-0 print:bg-white">
         {isSharedServer && (
-          <div className="p-3.5 bg-blue-950/60 border border-blue-800/80 rounded-2xl flex items-center gap-3 text-xs text-blue-200 shadow-sm animate-in fade-in">
+          <div className="print:hidden p-3.5 bg-blue-950/60 border border-blue-800/80 rounded-2xl flex items-center gap-3 text-xs text-blue-200 shadow-sm animate-in fade-in">
             <Users className="w-4 h-4 text-blue-400 shrink-0" />
             <span>
               <strong>VPS Amiga:</strong> Você está visualizando este servidor através de compartilhamento com a sua conta. Todos os alertas críticos deste host também serão enviados para o seu e-mail.
@@ -281,7 +283,7 @@ export default function ServerDetailPage({ params }: { params: Promise<{ id: str
           </div>
         )}
 
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+        <div className="print:hidden flex flex-col sm:flex-row sm:items-center justify-between gap-4">
           <div className="flex items-center gap-4">
             <Link
               href="/servers"
@@ -337,7 +339,7 @@ export default function ServerDetailPage({ params }: { params: Promise<{ id: str
           </div>
         </div>
 
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5">
+        <div className="print:hidden grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5">
           <div className="bg-slate-900 border border-slate-800 rounded-2xl p-5 shadow-sm">
             <div className="flex items-center justify-between text-slate-400 mb-2">
               <span className="text-xs font-medium">Uso de CPU</span>
@@ -377,11 +379,11 @@ export default function ServerDetailPage({ params }: { params: Promise<{ id: str
             <div className="text-sm font-semibold text-white mt-1">
               {server.last_communication_at ? formatTimeBR(server.last_communication_at) : 'Aguardando'}
             </div>
-            <p className="text-[11px] text-slate-500 mt-1">Transmissão contínua a cada 30s</p>
+            <p className="text-[11px] text-slate-500 mt-1">Transmissão contínua a cada 10s</p>
           </div>
         </div>
 
-        <div className="flex items-center gap-2 border-b border-slate-800 overflow-x-auto pb-px">
+        <div className="print:hidden flex items-center gap-2 border-b border-slate-800 overflow-x-auto pb-px">
           <button
             type="button"
             onClick={() => setActiveTab('overview')}
@@ -424,6 +426,19 @@ export default function ServerDetailPage({ params }: { params: Promise<{ id: str
           >
             <Sliders className="w-4 h-4" />
             Serviços Monitorados ({servicesList.length})
+          </button>
+
+          <button
+            type="button"
+            onClick={() => setActiveTab('reports')}
+            className={`flex items-center gap-2 px-4 py-3 text-xs font-semibold rounded-t-xl transition-all border-b-2 -mb-px shrink-0 ${
+              activeTab === 'reports'
+                ? 'border-blue-500 text-blue-400 bg-slate-900/60'
+                : 'border-transparent text-slate-400 hover:text-slate-200 hover:bg-slate-900/30'
+            }`}
+          >
+            <FileText className="w-4 h-4" />
+            Relatórios (Mensal / PDF)
           </button>
         </div>
 
@@ -525,7 +540,7 @@ export default function ServerDetailPage({ params }: { params: Promise<{ id: str
 
             {extra ? (
               <div className="space-y-8">
-                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5">
+                <div className="print:hidden grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5">
                   <div className="bg-slate-900 border border-slate-800 rounded-2xl p-5 shadow-sm">
                     <div className="flex items-center justify-between text-slate-400 mb-2">
                       <span className="text-xs font-medium">Memória Swap</span>
@@ -695,7 +710,7 @@ export default function ServerDetailPage({ params }: { params: Promise<{ id: str
 
         {activeTab === 'containers' && (
           <div className="space-y-8 animate-in fade-in duration-200">
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5">
+            <div className="print:hidden grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5">
               <div className="bg-slate-900 border border-slate-800 rounded-2xl p-5 shadow-sm">
                 <div className="flex items-center justify-between text-slate-400 mb-2">
                   <span className="text-xs font-medium">Containers Docker</span>
@@ -1062,7 +1077,7 @@ export default function ServerDetailPage({ params }: { params: Promise<{ id: str
                 <div>
                   <h3 className="text-base font-semibold text-white">Serviços e Processos Rastreados</h3>
                   <p className="text-xs text-slate-400 mt-0.5">
-                    O agente testa esses daemons a cada 30 segundos usando checagem de processo ou systemctl.
+                    O agente testa esses daemons a cada 10 segundos usando checagem de processo ou systemctl.
                   </p>
                 </div>
                 <button
@@ -1107,6 +1122,15 @@ export default function ServerDetailPage({ params }: { params: Promise<{ id: str
             </div>
           </div>
         )}
+
+        {activeTab === 'reports' && (
+          <ServerReportTab
+            orgId={currentOrganization?.id}
+            serverId={server.id}
+            serverName={server.name}
+            isSharedServer={isSharedServer}
+          />
+        )}
       </main>
 
       {isModalOpen && (
@@ -1134,7 +1158,7 @@ export default function ServerDetailPage({ params }: { params: Promise<{ id: str
               <Sparkles className="w-4 h-4 text-blue-400 shrink-0 mt-0.5" />
               <span>
                 <strong>Sincronização instantânea:</strong> A VPS baixa esta nova lista automaticamente no próximo envio
-                de métricas (em até 30s). Não é necessário reiniciar o serviço nem acessar via SSH.
+                de métricas (em até 10s). Não é necessário reiniciar o serviço nem acessar via SSH.
               </span>
             </div>
 

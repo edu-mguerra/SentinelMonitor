@@ -8,6 +8,7 @@ import {
   SharedServerItem,
   ShareInviteItem,
   UserSearchResult,
+  ServerReport,
 } from '@/types/server';
 
 export const serversService = {
@@ -105,5 +106,34 @@ export const serversService = {
 
   async searchUsers(query: string): Promise<UserSearchResult[]> {
     return apiClient<UserSearchResult[]>(`/users/search-shareable?query=${encodeURIComponent(query)}`);
+  },
+
+  async getServerReport(
+    orgId: string,
+    serverId: string,
+    params: { days?: number; startDate?: string; endDate?: string }
+  ): Promise<ServerReport> {
+    const qs = new URLSearchParams();
+    if (params.startDate && params.endDate) {
+      qs.set('start_date', params.startDate);
+      qs.set('end_date', params.endDate);
+    } else if (params.days) {
+      qs.set('days', String(params.days));
+    }
+    return apiClient<ServerReport>(`/organizations/${orgId}/servers/${serverId}/report?${qs.toString()}`);
+  },
+
+  async getSharedServerReport(
+    serverId: string,
+    params: { days?: number; startDate?: string; endDate?: string }
+  ): Promise<ServerReport> {
+    const qs = new URLSearchParams();
+    if (params.startDate && params.endDate) {
+      qs.set('start_date', params.startDate);
+      qs.set('end_date', params.endDate);
+    } else if (params.days) {
+      qs.set('days', String(params.days));
+    }
+    return apiClient<ServerReport>(`/shared-servers/${serverId}/report?${qs.toString()}`);
   },
 };

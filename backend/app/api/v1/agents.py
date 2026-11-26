@@ -85,7 +85,7 @@ async def agent_handshake(
         agent_token=permanent_token,
         server_id=server.id,
         server_name=server.name,
-        collection_interval_seconds=30,
+        collection_interval_seconds=10,
         monitored_services=server.monitored_services or ["nginx", "docker", "postgres", "mysqld", "apache2"]
     )
 
@@ -153,6 +153,7 @@ async def receive_agent_metrics(
         "server_id": server.id,
         "received_at": now.isoformat(),
         "config": {
-            "services": services_config
+            "services": services_config,
+            "interval_seconds": 10
         }
     }

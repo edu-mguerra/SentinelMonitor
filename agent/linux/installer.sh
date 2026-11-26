@@ -14,7 +14,7 @@ echo -e "${YELLOW}O que esta instalacao faz:${NC}"
 echo -e " - Cria ambiente Python isolado em /opt/sentinel-agent (psutil)"
 echo -e " - Registra daemon systemd (usuario restrito sentinel-agent)"
 echo -e " - NAO abre nenhuma porta de entrada na sua VPS (apenas envia"
-echo -e "   telemetria de saida a cada 30s para a API do Sentinel)."
+echo -e "   telemetria de saida a cada 10s para a API do Sentinel)."
 echo -e "${BLUE}======================================================${NC}"
 
 if [ "$EUID" -ne 0 ]; then
@@ -150,7 +150,7 @@ fi
 cat <<EOF > /etc/sentinel-agent/agent.conf
 API_URL="${API_URL}"
 AGENT_TOKEN="${PERMANENT_TOKEN}"
-INTERVAL_SECONDS=30
+INTERVAL_SECONDS=10
 SERVICES="nginx,docker,postgres,mysqld,apache2"
 EOF
 

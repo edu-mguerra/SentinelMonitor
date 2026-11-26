@@ -198,7 +198,7 @@ export function InstallModal({
             <ul className="list-disc list-inside space-y-1 text-slate-400">
               <li>Cria um ambiente Python isolado (<code className="text-slate-300">venv</code> + <code className="text-slate-300">psutil</code>) e baixa apenas os 3 módulos do agente.</li>
               <li>
-                <strong className="text-slate-200">Não abre nenhuma porta de entrada na sua máquina</strong> (zero exposição no firewall): o agente apenas envia métricas de saída a cada 30s para a porta da API do Sentinel (porta <code className="text-blue-300">10203</code> neste ambiente).
+                <strong className="text-slate-200">Não abre nenhuma porta de entrada na sua máquina</strong> (zero exposição no firewall): o agente apenas envia métricas de saída a cada 10s para a porta da API do Sentinel (porta <code className="text-blue-300">10203</code> neste ambiente).
               </li>
               <li>Mantém um buffer local em disco para reenviar métricas caso a conexão oscile.</li>
             </ul>

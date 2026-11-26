@@ -228,7 +228,7 @@ export function Sidebar() {
 
   return (
     <>
-      <aside className="hidden md:flex w-64 bg-slate-900 border-r border-slate-800 flex-col justify-between shrink-0 select-none">
+      <aside className="hidden md:flex print:hidden w-64 bg-slate-900 border-r border-slate-800 flex-col justify-between shrink-0 select-none">
         {renderContent(false)}
       </aside>
 
